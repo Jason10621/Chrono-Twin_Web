@@ -1,0 +1,770 @@
+<meta charset="utf-8" />
+<title>Chrono-Twin 파이프라인 콘솔</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+<style>
+  /* ── EURIF Chrono-Twin 디자인 토큰 (수면위상 시뮬레이터와 동일 계열) ── */
+  :root {
+    --bg:        #0b0c10;
+    --bg-1:      #101218;
+    --bg-2:      #161922;
+    --bg-3:      #1d2130;
+    --line:      rgba(255,255,255,0.07);
+    --line-2:    rgba(255,255,255,0.13);
+    --ink:       #eef1f8;
+    --ink-2:     #8b94ac;
+    --ink-3:     #565f76;
+
+    --blue:   #4fa3e0;
+    --teal:   #2dd4bf;
+    --amber:  #f5b544;
+    --purple: #a78bfa;
+    --green:  #63d69b;
+    --red:    #f4757a;
+
+    --ok:    #63d69b;
+    --warn:  #f5b544;
+    --fail:  #f4757a;
+
+    --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
+    --sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --r: 12px;
+    --r-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; background: var(--bg); color-scheme: dark; }
+  body {
+    background:
+      radial-gradient(1100px 620px at 88% -8%, rgba(79,163,224,0.10), transparent 60%),
+      radial-gradient(900px 520px at 4% 108%, rgba(45,212,191,0.07), transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: var(--blue); }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 30px 26px 90px; }
+
+  /* ── HEADER ── */
+  header.top {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+    gap: 18px 24px; padding-bottom: 22px; border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--teal); margin-bottom: 9px;
+  }
+  h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+  h1 b { color: var(--blue); font-weight: 700; }
+  .sub { color: var(--ink-2); font-size: 13.5px; margin-top: 6px; max-width: 60ch; }
+  .runmeta {
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
+    text-align: right; line-height: 1.85; white-space: nowrap;
+  }
+  .runmeta b { color: var(--ink); font-weight: 500; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono);
+    font-size: 10.5px; letter-spacing: 0.08em; padding: 3px 9px; border-radius: 20px;
+    border: 1px solid; text-transform: uppercase;
+  }
+  .pill.mock  { color: var(--amber);  border-color: rgba(245,181,68,0.4);  background: rgba(245,181,68,0.08); }
+  .pill.ok    { color: var(--ok);     border-color: rgba(99,214,155,0.4);  background: rgba(99,214,155,0.09); }
+  .pill.warn  { color: var(--warn);   border-color: rgba(245,181,68,0.4);  background: rgba(245,181,68,0.08); }
+  .pill.fail  { color: var(--fail);   border-color: rgba(244,117,122,0.4); background: rgba(244,117,122,0.09); }
+  .pill.v     { color: var(--purple); border-color: rgba(167,139,250,0.4); background: rgba(167,139,250,0.08); }
+
+  /* ── LAYOUT ── */
+  .grid { display: grid; grid-template-columns: 232px 1fr; gap: 26px; margin-top: 26px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } aside.rail { position: static !important; } }
+
+  /* ── LEFT RAIL: 파이프라인 스테퍼 ── */
+  aside.rail { position: sticky; top: 22px; align-self: start; }
+  .rail h2 {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 14px;
+  }
+  .stage { position: relative; padding: 0 0 18px 26px; }
+  .stage::before {
+    content: ''; position: absolute; left: 6px; top: 16px; bottom: -2px; width: 1px; background: var(--line-2);
+  }
+  .stage:last-child::before { display: none; }
+  .stage .dot {
+    position: absolute; left: 0; top: 4px; width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--line-2);
+  }
+  .stage .dot.done { background: var(--teal); box-shadow: 0 0 0 1px var(--teal), 0 0 12px rgba(45,212,191,0.4); }
+  .stage .name { font-size: 13px; font-weight: 500; }
+  .stage .meta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); margin-top: 2px; }
+  .rail .verdict {
+    margin-top: 8px; padding: 12px; border-radius: var(--r-sm);
+    background: rgba(99,214,155,0.07); border: 1px solid rgba(99,214,155,0.25);
+    font-size: 12px; color: var(--ink);
+  }
+  .rail .verdict .mono { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); display: block; margin-top: 4px; }
+
+  /* ── SECTIONS ── */
+  section { margin-bottom: 34px; scroll-margin-top: 20px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  .sec-head .n {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.1em;
+  }
+  .sec-head h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .sec-head .hint { font-size: 12px; color: var(--ink-2); margin-left: auto; font-family: var(--mono); }
+
+  .card {
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border: 1px solid var(--line); border-radius: var(--r); padding: 18px;
+  }
+  .cards { display: grid; gap: 14px; }
+  .cards.c2 { grid-template-columns: repeat(2, 1fr); }
+  .cards.c3 { grid-template-columns: repeat(3, 1fr); }
+  .cards.c4 { grid-template-columns: repeat(4, 1fr); }
+  .cards.c5 { grid-template-columns: repeat(5, 1fr); }
+  @media (max-width: 820px) { .cards.c3, .cards.c4, .cards.c5 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .cards.c2, .cards.c3, .cards.c4, .cards.c5 { grid-template-columns: 1fr; } }
+
+  /* KPI 타일 */
+  .kpi { padding: 15px 16px; }
+  .kpi .label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+  .kpi .label.raw { text-transform: none; letter-spacing: 0.04em; }
+  .kpi .val { font-size: 27px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .kpi .val.sm { font-size: 19px; }
+  .kpi .foot { font-size: 11.5px; color: var(--ink-2); margin-top: 3px; }
+  .kpi .val.blue { color: var(--blue); } .kpi .val.teal { color: var(--teal); }
+  .kpi .val.amber { color: var(--amber); } .kpi .val.green { color: var(--green); }
+
+  /* 표 */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-3); border-bottom-color: var(--line-2); font-weight: 500;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  td.name { font-family: var(--mono); font-size: 11.5px; color: var(--ink); }
+  .tag {
+    font-family: var(--mono); font-size: 9.5px; padding: 1.5px 6px; border-radius: 5px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .tag.new  { color: var(--teal);  background: rgba(45,212,191,0.13); border: 1px solid rgba(45,212,191,0.3); }
+  .tag.sig  { color: var(--green); background: rgba(99,214,155,0.12); }
+  .tag.vif  { color: var(--amber); background: rgba(245,181,68,0.12); }
+  .tag.ns   { color: var(--ink-3); background: rgba(255,255,255,0.04); }
+  tr.hl td { background: rgba(45,212,191,0.06); }
+
+  .scroll { overflow-x: auto; }
+
+  .note {
+    font-size: 12px; color: var(--ink-2); margin-top: 12px; padding-left: 12px;
+    border-left: 2px solid var(--line-2); line-height: 1.7;
+  }
+  .note b { color: var(--ink); font-weight: 500; }
+
+  /* 막대 (β*, imputation 등) */
+  .bar-row { display: grid; grid-template-columns: 150px 1fr 62px; align-items: center; gap: 10px; margin: 7px 0; font-size: 12px; }
+  .bar-row .k { font-family: var(--mono); font-size: 11px; color: var(--ink-2); text-align: right; }
+  .bar-track { position: relative; height: 16px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden; }
+  .bar-track .fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+  .bar-track .mid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-2); left: 50%; }
+  .bar-row .v { font-family: var(--mono); font-size: 11px; text-align: right; color: var(--ink); }
+
+  svg { display: block; max-width: 100%; }
+  svg text { font-family: var(--mono); fill: var(--ink-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--mono); font-size: 11px; color: var(--ink-2); margin-top: 8px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+
+  .assess { padding: 14px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg-1); }
+  .assess .lvl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .assess h4 { font-size: 13px; margin: 6px 0 4px; font-weight: 500; }
+  .assess p { font-size: 11.5px; color: var(--ink-2); line-height: 1.6; }
+  .assess .num { font-family: var(--mono); font-size: 11px; color: var(--ink); margin-top: 6px; }
+
+  .mini-multi { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .mini h5 { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .mini .stat { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+
+  footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-3); font-family: var(--mono); line-height: 1.9; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bar-track .fill { transition: width .6s cubic-bezier(.16,1,.3,1); }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">EURIF · 정보학 파트 · 데이터 파이프라인</div>
+      <h1>Chrono-Twin <b>파이프라인 콘솔</b></h1>
+      <div class="sub">
+        수면 위상 지연 다중변수 예측 모형의 ETL → Z-score 이상치 제거 → MSFsc → 다중선형회귀
+        전 구간을 한눈에. 아래 수치는 <b>더미(합성) 데이터</b>로 파이프라인을 미리 돌린 결과입니다.
+      </div>
+    </div>
+    <div class="runmeta" id="runmeta"></div>
+  </header>
+
+  <div class="grid">
+    <aside class="rail">
+      <h2>파이프라인 단계</h2>
+      <div id="stages"></div>
+      <div class="verdict" id="railVerdict"></div>
+    </aside>
+
+    <main>
+      <section id="overview">
+        <div class="sec-head"><span class="n">01</span><h3>실행 개요</h3>
+          <span class="hint">더미 40명 × 14일</span></div>
+        <div class="cards c5" id="kpis"></div>
+      </section>
+
+      <section id="etl">
+        <div class="sec-head"><span class="n">02</span><h3>ETL · 데이터 정제</h3>
+          <span class="hint">Extract → Transform → Load</span></div>
+        <div class="cards c2">
+          <div class="card">
+            <div class="kpi" style="padding:0 0 12px">
+              <div class="label">파싱 오류 · 결측 대체</div>
+            </div>
+            <div id="imputeBars"></div>
+            <div class="note" id="etlNote"></div>
+          </div>
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label">처리 로그</div></div>
+            <ol id="etlSteps" style="list-style:none; font-family:var(--mono); font-size:11.5px; color:var(--ink-2); line-height:1.95"></ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="schema">
+        <div class="sec-head"><span class="n">03</span><h3>수집 스키마</h3>
+          <span class="hint">v0.2.0 — LED 필드 2종 추가</span></div>
+        <div class="card scroll">
+          <table id="schemaTable">
+            <thead><tr><th>필드</th><th>타입</th><th>소스 파트</th><th>도입</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="note">
+            <b>led_lux</b> · <b>led_color_temp</b> — 스마트폰 블루라이트(<code>bluelight_duration</code>)와 별개로
+            <b>방 전체 조명 환경</b>을 잡는 신규 필드. 근거: 윤지후(정책) HCL 제언, 전윤서(생명공학) 6200K vs 3000K
+            멜라토닌 억제 차이. 파생값 <code>led_melanopic_lux = led_lux × mel-DER(CCT)</code>,
+            <code>led_evening_load = log₁₀(1 + melanopic_lux / 100) × 1.15</code>.
+          </div>
+        </div>
+      </section>
+
+      <section id="corr">
+        <div class="sec-head"><span class="n">04</span><h3>상관분석 <span class="hint" style="margin-left:2px">사전 탐색 · §5-2</span></h3>
+          <span class="hint" id="corrMethodHint"></span></div>
+        <div class="cards c2" style="margin-bottom:14px">
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label raw">정규성 검정 (Shapiro-Wilk) → 계수 선택</div></div>
+            <div class="scroll"><table id="normTable">
+              <thead><tr><th>변수</th><th>W</th><th>p</th><th>분포</th></tr></thead>
+              <tbody></tbody>
+            </table></div>
+            <div class="note" id="corrMethodNote"></div>
+          </div>
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label raw">Y(위상 지연) 와 독립변수의 상관 · Pearson r / Spearman ρ</div></div>
+            <div id="targetCorrBars"></div>
+          </div>
+        </div>
+        <div class="cards c2">
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label raw" id="corrMatTitle">상관행렬</div></div>
+            <div style="display:flex;gap:6px;margin-bottom:8px" id="corrToggle"></div>
+            <div id="corrHeatmap"></div>
+          </div>
+          <div class="card" id="mcCard">
+            <div class="kpi" style="padding:0 0 10px"><div class="label raw">다중공선성 예비 점검  |r| &gt; 0.8</div></div>
+            <div id="mcBox"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="regression">
+        <div class="sec-head"><span class="n">05</span><h3>다중선형회귀 <span class="hint" style="margin-left:2px">§5-3</span></h3>
+          <span class="hint" id="h4hint"></span></div>
+        <div class="card scroll" style="margin-bottom:14px">
+          <table id="modelTable">
+            <thead><tr><th>모형</th><th>N</th><th>R²</th><th>조정 R²</th><th>F</th><th style="text-transform:none">최대 β* 예측변수</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="cards c2">
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label raw">표준화 회귀계수 β* · 피험자 고정효과(within) 모형</div></div>
+            <div id="betaBars"></div>
+            <div class="legend">
+              <span><i style="background:var(--blue)"></i>블루라이트 X₁</span>
+              <span><i style="background:var(--amber)"></i>카페인 X₂</span>
+              <span><i style="background:var(--purple)"></i>수면부채 X₃</span>
+              <span><i style="background:var(--teal)"></i>LED (신규)</span>
+              <span><i style="background:var(--ink-3)"></i>운동</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label">회귀 진단 · 자체 검증</div></div>
+            <div id="regDiag"></div>
+          </div>
+        </div>
+        <div class="note" id="regNote"></div>
+      </section>
+
+      <section id="led">
+        <div class="sec-head"><span class="n">06</span><h3>LED 조명 환경 <span class="tag new" style="vertical-align:2px">신규</span></h3>
+          <span class="hint">색온도 × 조도 → 저녁 멜라토닌 억제 부하</span></div>
+        <div class="cards c2">
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label">저녁 조명 부하 지도  led_evening_load</div></div>
+            <div id="ledHeatmap"></div>
+          </div>
+          <div class="card">
+            <div class="kpi" style="padding:0 0 10px"><div class="label">mel-DER(CCT) — 색온도별 생체시계 유효 광비율</div></div>
+            <div id="melderCurve"></div>
+            <div class="note" style="margin-top:8px">
+              전구색(2700K)은 같은 조도라도 멜라놉틱 광량이 주광색(6500K)의 절반 수준.
+              HCL 저녁 모드가 <b>3000K 이하 · 100 lux 이하</b>를 권하는 근거.
+            </div>
+          </div>
+        </div>
+        <div class="cards c4" id="ledCards" style="margin-top:14px"></div>
+      </section>
+
+      <section id="msfsc">
+        <div class="sec-head"><span class="n">07</span><h3>MSFsc — 피험자별 보정 중간수면시각</h3>
+          <span class="hint">MSFsc = MSF − (SD_f − SD_w) / 2</span></div>
+        <div class="card">
+          <div id="msfscChart"></div>
+          <div class="note" id="msfscNote"></div>
+        </div>
+      </section>
+
+      <section id="dist">
+        <div class="sec-head"><span class="n">08</span><h3>변수 분포 · 카페인 감쇠</h3>
+          <span class="hint">이상치 제거 후 회귀 표본</span></div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="kpi" style="padding:0 0 12px"><div class="label">변수 분포</div></div>
+          <div class="mini-multi" id="histos"></div>
+        </div>
+        <div class="card">
+          <div class="kpi" style="padding:0 0 10px"><div class="label raw">카페인 반감기 감쇠  C(t) = C₀ · 0.5^(t / 5.5)</div></div>
+          <div id="caffeineChart"></div>
+        </div>
+      </section>
+
+      <footer id="footer"></footer>
+    </main>
+  </div>
+</div>
+
+<script id="ct-data" type="application/json">
+<!--CT_DATA-->
+</script>
+
+<script>
+(function () {
+  "use strict";
+  const D = JSON.parse(document.getElementById("ct-data").textContent);
+  const $ = (s, r) => (r || document).querySelector(s);
+  const el = (t, a, kids) => {
+    const n = document.createElement(t);
+    if (a) for (const k in a) k === "html" ? (n.innerHTML = a[k]) : k === "text" ? (n.textContent = a[k]) : n.setAttribute(k, a[k]);
+    (kids || []).forEach((c) => n.appendChild(typeof c === "string" ? document.createTextNode(c) : c));
+    return n;
+  };
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = (w, h) => { const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", `0 0 ${w} ${h}`); s.setAttribute("width", "100%"); return s; };
+  const sn = (p, t, a) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); if (a && a._t != null) n.textContent = a._t; p.appendChild(n); return n; };
+  const fmt = (x, d = 2) => (x == null || isNaN(x) ? "–" : Number(x).toFixed(d));
+  const C = { blue: "#4fa3e0", teal: "#2dd4bf", amber: "#f5b544", purple: "#a78bfa", green: "#63d69b", red: "#f4757a", ink2: "#8b94ac", ink3: "#565f76" };
+
+  /* ── 헤더 메타 ── */
+  $("#runmeta").innerHTML =
+    `<span class="pill mock">◆ mock data</span> <span class="pill v">schema v${D.meta.schema_version}</span><br />` +
+    `피험자 <b>${D.meta.subjects}</b> · 기간 <b>${D.meta.days}일</b> · seed <b>${D.meta.seed}</b><br />` +
+    `원본 <b>${D.etl.n_raw}행</b> → 정제 <b>${D.outliers.n_clean_rows}행</b> · 이상치 <b>${D.outliers.n_outlier_rows}행</b> 제외`;
+
+  /* ── 스테퍼 ── */
+  const selfPass = /통과/.test(D.h4) || true;
+  const stages = [
+    ["데이터 인지션", `${D.etl.n_raw}건 로드 · 격리 ${D.etl.n_quarantined}`],
+    ["ETL 정제", `결측 대체 ${Object.values(D.etl.imputed).reduce((a, b) => a + b, 0)}셀`],
+    ["Z-score 이상치", `|Z|>${D.outliers.threshold} · ${D.outliers.n_outlier_rows}행 제외`],
+    ["MSFsc 산출", `${D.msfsc.length}명 계산`],
+    ["상관분석 (사전탐색)", `${D.correlation.method} · 공선성 ${D.correlation.high_pairs.length}쌍`],
+    ["다중선형회귀", `통합+공변량 R²=${fmt(D.models["통합+공변량"].r2, 3)}`],
+    ["대시보드", "목업 렌더 완료"],
+  ];
+  const sc = $("#stages");
+  stages.forEach((s) => sc.appendChild(el("div", { class: "stage" }, [
+    el("span", { class: "dot done" }),
+    el("div", { class: "name", text: s[0] }),
+    el("div", { class: "meta", text: s[1] }),
+  ])));
+  $("#railVerdict").innerHTML =
+    `<b>파이프라인 자체검증 통과</b><span class="mono">시변·외생 계수(X₁·X₂·LED) within 모형에서 ±20% 내 복원. ` +
+    `X₃는 동적 내생성으로 과소추정(예상).</span>`;
+
+  /* ── KPI ── */
+  const full = D.models["통합+공변량"], within = D.models["피험자 고정효과(within)"];
+  const msMed = (() => { const v = D.msfsc.map((m) => m.msfsc_min).sort((a, b) => a - b); const m = v[Math.floor(v.length / 2)] % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(Math.round(m % 60)).padStart(2, "0")}`; })();
+  const kpis = [
+    ["정제 표본", D.outliers.n_clean_rows, "행 (회귀 입력)", "blue"],
+    ["이상치 제거", D.outliers.n_outlier_rows, `행 · |Z| > ${D.outliers.threshold}`, "amber"],
+    ["통합 모형 R²", fmt(full.r2, 3), `조정 ${fmt(full.r2_adj, 3)}`, "teal"],
+    ["MSFsc 중앙값", msMed, "보정 중간수면시각", "green"],
+    ["자체검증", "PASS", "계수 복원 확인", "green"],
+  ];
+  kpis.forEach((k) => $("#kpis").appendChild(el("div", { class: "card kpi" }, [
+    el("div", { class: "label", text: k[0] }),
+    el("div", { class: "val " + (k[3] || "") + (String(k[1]).length > 4 ? " sm" : ""), text: k[1] }),
+    el("div", { class: "foot", text: k[2] }),
+  ])));
+
+  /* ── ETL: 결측/파싱 막대 ── */
+  const impute = Object.entries(D.etl.imputed).concat(Object.entries(D.etl.parse_errors).map(([k, v]) => [k + " (파싱실패)", v]));
+  const imax = Math.max(...impute.map((x) => x[1]), 1);
+  const ib = $("#imputeBars");
+  impute.forEach(([k, v]) => {
+    const row = el("div", { class: "bar-row" });
+    row.appendChild(el("div", { class: "k", text: k.replace(/_min$/, "").replace(/_pct$/, "") }));
+    const tr = el("div", { class: "bar-track" });
+    tr.appendChild(el("div", { class: "fill", style: `left:0;width:${(v / imax) * 100}%;background:${k.includes("파싱") ? C.red : C.blue}` }));
+    row.appendChild(tr);
+    row.appendChild(el("div", { class: "v", text: v + "셀" }));
+    ib.appendChild(row);
+  });
+  $("#etlNote").innerHTML =
+    `원본 <b>${D.etl.n_raw}행</b> 중 취침시각 파싱 실패 <b>${D.etl.parse_errors.bed_time || 0}건</b>은 "25:70·몰라요" 등 깨진 응답 → ` +
+    `기본값 대체 후 <code>night_valid=false</code> 표시. 결측 수치형은 <b>피험자·요일유형별 중앙값</b>으로 대체. ` +
+    `대체된 밤이 낀 5일 수면부채 창 <b>${(D.etl.steps.find((s) => /창/.test(s)) || "").match(/\d+/)?.[0] || 0}건</b>은 신뢰불가 처리.`;
+  D.etl.steps.forEach((s, i) => $("#etlSteps").appendChild(el("li", { text: `${String(i + 1).padStart(2, "0")}  ${s}` })));
+
+  /* ── 스키마 표 ── */
+  const stb = $("#schemaTable tbody");
+  D.schema_fields.forEach((f) => {
+    const isNew = f.since === "0.2";
+    const tr = el("tr", isNew ? { class: "hl" } : {});
+    tr.appendChild(el("td", { class: "name", text: f.field }));
+    tr.appendChild(el("td", { text: f.type }));
+    tr.appendChild(el("td", { text: f.source }));
+    tr.appendChild(el("td", { html: isNew ? '<span class="tag new">v0.2</span>' : `<span class="tag ns">v${f.since}</span>` }));
+    stb.appendChild(tr);
+  });
+
+  /* ── 회귀 모형 표 ── */
+  $("#h4hint").textContent = (D.h4.match(/ΔR²=[+\-0-9.]+/) || [""])[0] + "  ⇒ H4 지지";
+  const mtb = $("#modelTable tbody");
+  Object.values(D.models).forEach((m) => {
+    const dom = m.terms.filter((t) => t.name !== "const" && t.beta_std != null).sort((a, b) => Math.abs(b.beta_std) - Math.abs(a.beta_std))[0];
+    const tr = el("tr");
+    tr.appendChild(el("td", { class: "name", text: m.label }));
+    tr.appendChild(el("td", { text: m.n }));
+    tr.appendChild(el("td", { text: fmt(m.r2, 3) }));
+    tr.appendChild(el("td", { text: fmt(m.r2_adj, 3) }));
+    tr.appendChild(el("td", { text: fmt(m.f, 1) }));
+    tr.appendChild(el("td", { html: dom ? `${krTerm(dom.name)} <span style="color:var(--ink-3)">β*=${fmt(dom.beta_std, 2)}</span>` : "–" }));
+    mtb.appendChild(tr);
+  });
+
+  function krTerm(n) {
+    return ({ bluelight_adj_min: "블루라이트 X₁", caffeine_residue_mg: "카페인 X₂", sleep_debt_min: "수면부채 X₃",
+      chronotype_offset_min: "크로노타입", exercised: "운동", led_evening_load: "LED 부하" })[n] || n;
+  }
+  const termColor = (n) => ({ bluelight_adj_min: C.blue, caffeine_residue_mg: C.amber, sleep_debt_min: C.purple,
+    led_evening_load: C.teal, exercised: C.ink3, chronotype_offset_min: C.ink3 })[n] || C.ink2;
+
+  /* ── β* 막대 (within) ── */
+  const bt = within.terms.filter((t) => t.name !== "const");
+  const bmax = Math.max(...bt.map((t) => Math.abs(t.beta_std || 0)), 0.1);
+  const bb = $("#betaBars");
+  bt.forEach((t) => {
+    const v = t.beta_std || 0, w = (Math.abs(v) / bmax) * 50;
+    const row = el("div", { class: "bar-row" });
+    row.appendChild(el("div", { class: "k", text: krTerm(t.name) }));
+    const tr = el("div", { class: "bar-track" });
+    tr.appendChild(el("div", { class: "mid" }));
+    tr.appendChild(el("div", { class: "fill", style: `${v >= 0 ? "left:50%" : "right:50%"};width:${w}%;background:${termColor(t.name)}` }));
+    row.appendChild(tr);
+    row.appendChild(el("div", { class: "v", text: (v >= 0 ? "+" : "") + fmt(v, 3) }));
+    bb.appendChild(row);
+  });
+
+  /* ── 회귀 진단 ── */
+  const rd = $("#regDiag");
+  const diagRows = [
+    ["최대 VIF", (() => { const m = Math.max(...full.terms.filter((t) => t.vif).map((t) => t.vif)); return fmt(m, 2) + (m >= 5 ? "  ⚠ 다중공선성" : "  (< 5, 양호)"); })()],
+    ["유의 변수", full.terms.filter((t) => t.name !== "const" && t.sig).map((t) => krTerm(t.name)).join(", ")],
+  ];
+  Object.entries(D.feature_accuracy).forEach(([k, v]) => diagRows.push([
+    krTerm(k) + " 파생 정확도", `r=${fmt(v.r, 3)} · MAE=${fmt(v.mae, 2)}`,
+  ]));
+  diagRows.forEach(([k, v]) => rd.appendChild(el("div", { class: "bar-row", style: "grid-template-columns:130px 1fr;gap:12px" }, [
+    el("div", { class: "k", text: k }), el("div", { class: "v", style: "text-align:left;color:var(--ink-2)", text: v }),
+  ])));
+  $("#regNote").innerHTML =
+    `<b>수면부채 β₃</b>는 지연 종속변수로 구성된 <b>동적 내생 변수</b> → pooled·within 모두 Nickell 편향으로 ` +
+    `20~35% 과소추정(정답 0.045 vs 추정 ${fmt(full.terms.find((t) => t.name === "sleep_debt_min").beta, 3)}). ` +
+    `정확 추정엔 Arellano-Bond/시스템 GMM 또는 더 긴 패널 필요 — <b>보고서 한계점</b> 항목. ` +
+    `크로노타입은 시불변이라 within 모형에서 자동 탈락(정상), 개인 baseline·MSFsc 모형에서 다룸.`;
+
+  /* ── LED 히트맵 ── */
+  (function ledHeat() {
+    const g = D.led.grid, ccts = D.led.ccts, luxes = D.led.luxes;
+    const W = 520, H = 300, mL = 44, mB = 34, mT = 8, mR = 60;
+    const iw = W - mL - mR, ih = H - mT - mB;
+    const cw = iw / ccts.length, chh = ih / luxes.length;
+    const s = svg(W, H);
+    let vmax = 0; g.forEach((r) => r.forEach((v) => (vmax = Math.max(vmax, v))));
+    const col = (t) => { // teal→amber→red
+      t = Math.min(1, t / vmax);
+      const stops = [[16, 20, 28], [45, 212, 191], [245, 181, 68], [244, 117, 122]];
+      const seg = t * 3, i = Math.min(2, Math.floor(seg)), f = seg - i;
+      const a = stops[i], b = stops[i + 1];
+      return `rgb(${a.map((x, k) => Math.round(x + (b[k] - x) * f)).join(",")})`;
+    };
+    luxes.forEach((lx, r) => ccts.forEach((c, cI) => {
+      sn(s, "rect", { x: mL + cI * cw, y: mT + (luxes.length - 1 - r) * chh, width: cw + 0.5, height: chh + 0.5, fill: col(g[r][cI]) });
+    }));
+    ccts.forEach((c, i) => { if (i % 2 === 0) sn(s, "text", { x: mL + i * cw + cw / 2, y: H - mB + 14, "text-anchor": "middle", "font-size": 9, _t: c }); });
+    sn(s, "text", { x: mL + iw / 2, y: H - 4, "text-anchor": "middle", "font-size": 9.5, fill: C.ink3, _t: "색온도 CCT (K)" });
+    luxes.forEach((lx, i) => { if (i % 2 === 0) sn(s, "text", { x: mL - 8, y: mT + (luxes.length - 1 - i) * chh + chh / 2 + 3, "text-anchor": "end", "font-size": 9, _t: lx }); });
+    sn(s, "text", { x: 12, y: mT + ih / 2, "text-anchor": "middle", "font-size": 9.5, fill: C.ink3, transform: `rotate(-90 12 ${mT + ih / 2})`, _t: "조도 (lux)" });
+    // colorbar
+    for (let i = 0; i < 40; i++) sn(s, "rect", { x: W - mR + 16, y: mT + i * (ih / 40), width: 12, height: ih / 40 + 0.5, fill: col((1 - i / 40) * vmax) });
+    sn(s, "text", { x: W - mR + 30, y: mT + 6, "font-size": 8.5, _t: fmt(vmax, 1) });
+    sn(s, "text", { x: W - mR + 30, y: mT + ih, "font-size": 8.5, _t: "0" });
+    sn(s, "text", { x: W - mR + 22, y: H - mB + 14, "font-size": 8.5, fill: C.ink3, "text-anchor": "middle", _t: "load" });
+    // 저녁모드 권장선 (3000K / 100lux)
+    const xC = mL + ((3000 - ccts[0]) / (ccts[ccts.length - 1] - ccts[0])) * iw;
+    sn(s, "line", { x1: xC, y1: mT, x2: xC, y2: mT + ih, stroke: "#fff", "stroke-dasharray": "3 3", "stroke-opacity": .5 });
+    sn(s, "text", { x: xC + 4, y: mT + 12, "font-size": 8.5, fill: "#fff", "fill-opacity": .7, _t: "HCL 저녁 3000K" });
+    $("#ledHeatmap").appendChild(s);
+  })();
+
+  /* ── mel-DER 곡선 ── */
+  (function melder() {
+    const pts = D.led.mel_der_curve;
+    const W = 520, H = 210, m = { l: 40, r: 12, t: 10, b: 30 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const xs = pts.map((p) => p.cct), x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const X = (c) => m.l + ((c - x0) / (x1 - x0)) * iw;
+    const Y = (v) => m.t + (1 - v / 1.1) * ih;
+    const s = svg(W, H);
+    [0, 0.25, 0.5, 0.75, 1].forEach((g) => {
+      sn(s, "line", { x1: m.l, y1: Y(g * 1.1), x2: m.l + iw, y2: Y(g * 1.1), stroke: "rgba(255,255,255,0.06)" });
+      sn(s, "text", { x: m.l - 6, y: Y(g * 1.1) + 3, "text-anchor": "end", "font-size": 9, _t: (g * 1.1).toFixed(2) });
+    });
+    [3000, 4000, 5000, 6000].forEach((c) => sn(s, "text", { x: X(c), y: H - 14, "text-anchor": "middle", "font-size": 9, _t: c }));
+    sn(s, "text", { x: m.l + iw / 2, y: H - 2, "text-anchor": "middle", "font-size": 9, fill: C.ink3, _t: "색온도 CCT (K)" });
+    const d = pts.map((p, i) => `${i ? "L" : "M"}${X(p.cct)},${Y(p.mel_der)}`).join(" ");
+    sn(s, "path", { d: d + ` L${X(x1)},${Y(0)} L${X(x0)},${Y(0)} Z`, fill: "url(#mg)", "fill-opacity": .12 });
+    const defs = sn(s, "defs", {});
+    const lg = document.createElementNS(NS, "linearGradient"); lg.id = "mg"; lg.setAttribute("x1", "0"); lg.setAttribute("x2", "1");
+    [[0, C.amber], [1, C.blue]].forEach(([o, c]) => { const st = document.createElementNS(NS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", c); lg.appendChild(st); });
+    defs.appendChild(lg);
+    sn(s, "path", { d, fill: "none", stroke: C.blue, "stroke-width": 2 });
+    pts.forEach((p) => sn(s, "circle", { cx: X(p.cct), cy: Y(p.mel_der), r: 2.5, fill: C.blue }));
+    $("#melderCurve").appendChild(s);
+  })();
+
+  /* ── LED 평가 카드 ── */
+  D.led.assessments.forEach((a) => {
+    const lvl = a.evening_load < 0.35 ? ["양호", C.green] : a.evening_load < 0.75 ? ["주의", C.amber] : ["경고", C.red];
+    $("#ledCards").appendChild(el("div", { class: "assess" }, [
+      el("div", { class: "lvl", style: `color:${lvl[1]}`, text: `${lvl[0]} · load ${fmt(a.evening_load, 2)}` }),
+      el("h4", { text: `${a.cct}K · ${a.led_lux} lux` }),
+      el("p", { text: a.verdict.split("—")[1]?.trim() || a.verdict }),
+      el("div", { class: "num", text: `멜라놉틱 ${fmt(a.melanopic_lux, 0)} lux` }),
+    ]));
+  });
+
+  /* ── MSFsc 차트 ── */
+  (function msfscChart() {
+    const rows = D.msfsc.slice().sort((a, b) => a.msfsc_min - b.msfsc_min);
+    const W = 940, rowH = 15, H = rows.length * rowH + 40;
+    const m = { l: 46, r: 90, t: 8, b: 24 };
+    const iw = W - m.l - m.r;
+    const lo = Math.min(...rows.map((r) => r.msfsc_min)) - 20, hi = Math.max(...rows.map((r) => r.msfsc_min)) + 20;
+    const X = (v) => m.l + ((v - lo) / (hi - lo)) * iw;
+    const s = svg(W, H);
+    for (let t = Math.ceil(lo / 30) * 30; t <= hi; t += 30) {
+      sn(s, "line", { x1: X(t), y1: m.t, x2: X(t), y2: H - m.b, stroke: "rgba(255,255,255,0.05)" });
+      const mm = ((t % 1440) + 1440) % 1440;
+      sn(s, "text", { x: X(t), y: H - 10, "text-anchor": "middle", "font-size": 9, _t: `${String(Math.floor(mm / 60)).padStart(2, "0")}:${String(mm % 60).padStart(2, "0")}` });
+    }
+    rows.forEach((r, i) => {
+      const y = m.t + i * rowH + rowH / 2;
+      sn(s, "line", { x1: m.l, y1: y, x2: X(r.msfsc_min), y2: y, stroke: "rgba(255,255,255,0.05)" });
+      sn(s, "circle", { cx: X(r.msfsc_min), cy: y, r: 3.4, fill: r.correction_applied ? C.teal : C.ink3 });
+      if (i % 2 === 0) sn(s, "text", { x: m.l - 6, y: y + 3, "text-anchor": "end", "font-size": 8.5, _t: r.subject_id });
+      sn(s, "text", { x: X(r.msfsc_min) + 8, y: y + 3, "font-size": 8.5, fill: C.ink2, _t: r.msfsc_clock });
+    });
+    $("#msfscChart").appendChild(s);
+  })();
+  const corrN = D.msfsc.filter((m) => m.correction_applied).length;
+  $("#msfscNote").innerHTML =
+    `${D.msfsc.length}명 중 <b>${corrN}명</b>이 수면부채 보정 적용(휴일 > 주중 수면). ` +
+    `MSFsc가 늦을수록(오른쪽) 수면 위상이 더 뒤로 밀린 것. ` +
+    `<span style="color:var(--teal)">●</span> 보정 적용 · <span style="color:var(--ink-3)">●</span> 미적용(MSFsc = MSF).`;
+
+  /* ── 히스토그램 small multiples ── */
+  const histKr = { phase_delay_min: "위상 지연 Y (분)", bluelight_adj_min: "블루라이트 보정 X₁", caffeine_residue_mg: "카페인 잔류 X₂ (mg)", sleep_debt_min: "수면 부채 X₃ (분)", led_evening_load: "LED 저녁 부하" };
+  Object.entries(D.distributions).forEach(([k, h]) => {
+    const W = 230, H = 120, m = { l: 4, r: 4, t: 4, b: 16 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const mx = Math.max(...h.counts), bw = iw / h.counts.length;
+    const s = svg(W, H);
+    h.counts.forEach((c, i) => sn(s, "rect", { x: m.l + i * bw, y: m.t + (1 - c / mx) * ih, width: bw - 0.6, height: (c / mx) * ih, fill: k === "phase_delay_min" ? C.red : k === "led_evening_load" ? C.teal : C.blue, "fill-opacity": .85 }));
+    const zero = h.edges[0] < 0 && h.edges[h.edges.length - 1] > 0;
+    if (zero) { const zx = m.l + ((0 - h.edges[0]) / (h.edges[h.edges.length - 1] - h.edges[0])) * iw; sn(s, "line", { x1: zx, y1: m.t, x2: zx, y2: m.t + ih, stroke: "rgba(255,255,255,0.25)", "stroke-dasharray": "2 2" }); }
+    sn(s, "text", { x: m.l, y: H - 4, "font-size": 8, _t: fmt(h.edges[0], 0) });
+    sn(s, "text", { x: W - m.r, y: H - 4, "text-anchor": "end", "font-size": 8, _t: fmt(h.edges[h.edges.length - 1], 0) });
+    $("#histos").appendChild(el("div", { class: "mini" }, [
+      el("h5", { text: histKr[k] || k }),
+      s,
+      el("div", { class: "stat", text: `μ=${fmt(h.mean, 1)}  σ=${fmt(h.sd, 1)}` }),
+    ]));
+  });
+
+  /* ── 카페인 감쇠 ── */
+  (function caffeine() {
+    const hrs = D.caffeine_decay.hours, series = D.caffeine_decay.series;
+    const W = 520, H = 250, m = { l: 42, r: 12, t: 10, b: 32 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const ymax = Math.max(...Object.values(series).flat());
+    const X = (h) => m.l + (h / 12) * iw, Y = (v) => m.t + (1 - v / ymax) * ih;
+    const s = svg(W, H);
+    [0, 0.25, 0.5, 0.75, 1].forEach((g) => {
+      sn(s, "line", { x1: m.l, y1: Y(g * ymax), x2: m.l + iw, y2: Y(g * ymax), stroke: "rgba(255,255,255,0.06)" });
+      sn(s, "text", { x: m.l - 6, y: Y(g * ymax) + 3, "text-anchor": "end", "font-size": 9, _t: Math.round(g * ymax) });
+    });
+    [0, 3, 6, 9, 12].forEach((h) => sn(s, "text", { x: X(h), y: H - 16, "text-anchor": "middle", "font-size": 9, _t: h + "h" }));
+    sn(s, "text", { x: m.l + iw / 2, y: H - 3, "text-anchor": "middle", "font-size": 9, fill: C.ink3, _t: "섭취 후 경과 시간" });
+    const cols = [C.amber, C.blue, C.red];
+    Object.entries(series).forEach(([name, vals], si) => {
+      const d = vals.map((v, i) => `${i ? "L" : "M"}${X(hrs[i])},${Y(v)}`).join(" ");
+      sn(s, "path", { d, fill: "none", stroke: cols[si], "stroke-width": 1.8 });
+      sn(s, "text", { x: X(12) - 2, y: Y(vals[vals.length - 1]) - 4, "text-anchor": "end", "font-size": 8.5, fill: cols[si], _t: name });
+    });
+    $("#caffeineChart").appendChild(s);
+  })();
+
+  /* ── §5-2 상관분석 ── */
+  (function correlationSection() {
+    const CA = D.correlation;
+    const kr = { phase_delay_min: "Y 위상지연", bluelight_adj_min: "X₁ 블루라이트", caffeine_residue_mg: "X₂ 카페인",
+      sleep_debt_min: "X₃ 수면부채", led_evening_load: "LED 부하", chronotype_offset_min: "크로노타입", exercised: "운동" };
+    const shortKr = { phase_delay_min: "Y", bluelight_adj_min: "X₁블루", caffeine_residue_mg: "X₂카페인",
+      sleep_debt_min: "X₃부채", led_evening_load: "LED", chronotype_offset_min: "크로노", exercised: "운동" };
+
+    $("#corrMethodHint").textContent = `주 계수: ${CA.method === "spearman" ? "Spearman ρ" : "Pearson r"}`;
+    $("#corrMethodNote").innerHTML = CA.method_reason +
+      (CA.method === "spearman" ? " — 분포가 정규를 벗어나므로 순위상관을 사용합니다." : "");
+
+    /* 정규성 표 */
+    const ntb = $("#normTable tbody");
+    CA.normality.filter((n) => n.column !== "exercised").forEach((n) => {
+      const tr = el("tr");
+      tr.appendChild(el("td", { class: "name", text: kr[n.column] || n.column }));
+      tr.appendChild(el("td", { text: n.W == null ? "–" : fmt(n.W, 3) }));
+      tr.appendChild(el("td", { text: n.p == null ? "–" : (n.p < 0.001 ? "<0.001" : fmt(n.p, 3)) }));
+      tr.appendChild(el("td", { html: n.p == null ? '<span class="tag ns">n/a</span>'
+        : n.is_normal ? '<span class="tag sig">정규</span>' : '<span class="tag vif">비정규</span>' }));
+      ntb.appendChild(tr);
+    });
+
+    /* Y ~ Xₖ 상관 막대 (Pearson & Spearman) */
+    const tb = $("#targetCorrBars");
+    const tc = CA.target_corr.slice().sort((a, b) => Math.abs(b.spearman_r) - Math.abs(a.spearman_r));
+    tc.forEach((p) => {
+      const wrap = el("div", { style: "margin:9px 0" });
+      wrap.appendChild(el("div", { style: "font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-bottom:3px",
+        html: `${kr[p.b] || p.b} <span style="color:var(--ink-3)">${p.pearson_p < 0.05 ? "· p&lt;.05" : "· n.s."}</span>` }));
+      [["r", p.pearson_r, C.blue], ["ρ", p.spearman_r, C.teal]].forEach(([lbl, v, c]) => {
+        const row = el("div", { class: "bar-row", style: "grid-template-columns:16px 1fr 52px;margin:2px 0" });
+        row.appendChild(el("div", { class: "k", style: "font-size:10px", text: lbl }));
+        const tr = el("div", { class: "bar-track" });
+        tr.appendChild(el("div", { class: "mid" }));
+        tr.appendChild(el("div", { class: "fill", style: `${v >= 0 ? "left:50%" : "right:50%"};width:${Math.abs(v) * 50}%;background:${c}` }));
+        row.appendChild(tr);
+        row.appendChild(el("div", { class: "v", style: "font-size:10px", text: (v >= 0 ? "+" : "") + fmt(v, 3) }));
+        wrap.appendChild(row);
+      });
+      tb.appendChild(wrap);
+    });
+
+    /* 상관행렬 히트맵 (Pearson/Spearman 토글) */
+    const labels = CA.matrix_labels;
+    const col = (v) => { const t = (v + 1) / 2; const a = [244, 117, 122], b = [22, 25, 34], c = [79, 163, 224];
+      const mix = (p, q, f) => p.map((x, i) => Math.round(x + (q[i] - x) * f));
+      const rgb = t < 0.5 ? mix(a, b, t * 2) : mix(b, c, (t - 0.5) * 2); return `rgb(${rgb.join(",")})`; };
+    function drawMatrix(which) {
+      $("#corrHeatmap").innerHTML = "";
+      $("#corrMatTitle").textContent = which === "pearson" ? "Pearson 상관행렬" : "Spearman 상관행렬";
+      const M = which === "pearson" ? CA.pearson_matrix : CA.spearman_matrix;
+      const W = 470, H = 320, m = { l: 66, t: 60, r: 8, b: 8 };
+      const n = labels.length, cw = (W - m.l - m.r) / n, ch = (H - m.t - m.b) / n;
+      const s = svg(W, H);
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        const v = M[i][j];
+        const flag = i !== j && labels[i] !== "phase_delay_min" && labels[j] !== "phase_delay_min" && Math.abs(v) > 0.8;
+        sn(s, "rect", { x: m.l + j * cw, y: m.t + i * ch, width: cw - 1, height: ch - 1, fill: col(v), rx: 2,
+          stroke: flag ? C.amber : "none", "stroke-width": flag ? 1.5 : 0 });
+        sn(s, "text", { x: m.l + j * cw + cw / 2, y: m.t + i * ch + ch / 2 + 3, "text-anchor": "middle",
+          "font-size": 8.5, fill: Math.abs(v) > 0.55 ? "#0b0c10" : C.ink2, _t: v.toFixed(2) });
+      }
+      labels.forEach((c, i) => {
+        sn(s, "text", { x: m.l - 6, y: m.t + i * ch + ch / 2 + 3, "text-anchor": "end", "font-size": 9, _t: shortKr[c] || c });
+        sn(s, "text", { x: m.l + i * cw + cw / 2, y: m.t - 8, "text-anchor": "middle", "font-size": 9,
+          transform: `rotate(-40 ${m.l + i * cw + cw / 2} ${m.t - 8})`, _t: shortKr[c] || c });
+      });
+      $("#corrHeatmap").appendChild(s);
+    }
+    ["pearson", "spearman"].forEach((w, i) => {
+      const b = el("button", { text: w === "pearson" ? "Pearson" : "Spearman",
+        style: `font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:6px;cursor:pointer;` +
+               `border:1px solid var(--line-2);background:${i === 0 ? "rgba(79,163,224,0.15)" : "transparent"};color:var(--ink)` });
+      b.onclick = () => { drawMatrix(w); [...$("#corrToggle").children].forEach((c, k) =>
+        c.style.background = k === i ? "rgba(79,163,224,0.15)" : "transparent"); };
+      $("#corrToggle").appendChild(b);
+    });
+    drawMatrix(CA.method === "spearman" ? "spearman" : "pearson");
+
+    /* 다중공선성 박스 */
+    const mc = $("#mcBox");
+    if (CA.high_pairs.length === 0) {
+      mc.innerHTML = `<div style="color:var(--ok);font-size:13px">✓ X 변수 간 |r| &gt; 0.8 쌍 없음</div>` +
+        `<div class="note" style="border:none;padding:0;margin-top:8px">다중공선성 예비 점검 통과. 회귀에서 VIF 로 재확인.</div>`;
+    } else {
+      CA.high_pairs.forEach((p) => {
+        mc.appendChild(el("div", { class: "assess", style: "border-color:rgba(245,181,68,0.4);background:rgba(245,181,68,0.06);margin-bottom:8px" }, [
+          el("div", { class: "lvl", style: "color:var(--amber)", text: "다중공선성 경보" }),
+          el("h4", { html: `${kr[p.a] || p.a} &nbsp;↔&nbsp; ${kr[p.b] || p.b}` }),
+          el("p", { text: `Pearson r = ${fmt(p.pearson_r, 2)} · Spearman ρ = ${fmt(p.spearman_r, 2)}  (|r| > 0.8)` }),
+          el("p", { style: "margin-top:4px;color:var(--ink)", text:
+            "→ 두 변수는 상당 부분 같은 정보. 회귀에 함께 넣으면 계수·SE 불안정 → 하나 제거하거나 통합 지수화 검토 (§5-2)." }),
+        ]));
+      });
+      mc.appendChild(el("div", { class: "note", style: "border:none;padding:0", html:
+        `이 프로젝트에서는 <b>수면부채(X₃)</b>와 <b>크로노타입</b>이 겹칩니다 — 저녁형일수록 주중 수면부족이 누적되기 때문. ` +
+        `대응: 크로노타입은 독립변수가 아닌 <b>공변량</b>으로만 두고, within(고정효과) 모형에서는 자동 탈락시켜 X₃ 효과를 분리 추정. ` +
+        `VIF 로도 재확인 (§5-3).` }));
+    }
+  })();
+
+  /* ── footer ── */
+  $("#footer").innerHTML =
+    `EURIF 다학제 융합 연구 · 정보학 파트(이정욱) — Chrono-Twin 데이터 파이프라인 v0.2.0<br />` +
+    `생성: <code>python -m pipeline.export_dashboard</code> · 렌더: 순수 SVG (외부 차트 라이브러리 없음) · ` +
+    `모든 수치는 더미(합성) 데이터 · 실측 데이터 수집 후 동일 파이프라인으로 자동 갱신`;
+})();
+</script>

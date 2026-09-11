@@ -1,0 +1,9 @@
+# Chrono-Twin 파이프라인 + API 클라이언트
+numpy>=1.26
+pandas>=2.2
+scipy>=1.12
+statsmodels>=0.14
+scikit-learn>=1.4          # KNN Imputation (선택 경로)
+matplotlib>=3.8            # run_pipeline 그림 출력
+requests>=2.31            # api_clients
+pytest>=8.0               # 테스트

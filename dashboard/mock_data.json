@@ -1,0 +1,2105 @@
+{
+  "meta": {
+    "generated_from": "pipeline.export_dashboard",
+    "is_mock": true,
+    "subjects": 40,
+    "days": 14,
+    "seed": 20260904,
+    "schema_version": "0.2.0",
+    "ground_truth": {
+      "beta_bluelight_adj": 0.18,
+      "beta_caffeine_residue": 0.22,
+      "beta_sleep_debt": 0.045,
+      "gamma_led_load": 14.0,
+      "gamma_exercise": -6.0,
+      "intercept": 0.0,
+      "noise_sd": 9.0,
+      "baseline_chronotype_gain": 1.0
+    },
+    "injected_defects": {
+      "missing_cell": 149,
+      "broken_clock": 23,
+      "impossible_value": 8,
+      "stat_outlier": 1
+    }
+  },
+  "etl": {
+    "n_raw": 560,
+    "n_parsed": 560,
+    "n_quarantined": 0,
+    "parse_errors": {
+      "bed_time": 23
+    },
+    "imputed": {
+      "bluelight_duration_min": 38,
+      "screen_brightness_pct": 37,
+      "led_lux": 37,
+      "led_color_temp_k": 37
+    },
+    "steps": [
+      "Extract: 560행 로드",
+      "Transform: 타입 파싱 완료",
+      "Transform: 결측 대체 완료 (method=group_median)",
+      "수면부채: 대체(imputed) 밤이 낀 창 82건을 신뢰불가로 제외(None)",
+      "회귀 입력 표본: 278행 (수면부채 창 미충족 282행 제외)",
+      "Load: ChronoTwinRecord 적재 완료"
+    ]
+  },
+  "outliers": {
+    "threshold": 3.0,
+    "n_outlier_rows": 13,
+    "n_clean_rows": 265,
+    "columns": {
+      "bluelight_adj_min": {
+        "mu": 74.161,
+        "sigma": 34.075,
+        "n_hard": 2,
+        "n_z": 3,
+        "detail": [
+          "row 130: X=188.16  Z=+3.35",
+          "row 146: X=176.40  Z=+3.00",
+          "row 152: X=185.14  Z=+3.26",
+          "row 242: X=643.20  하드범위[0.0,600.0] 이탈",
+          "row 262: X=648.00  하드범위[0.0,600.0] 이탈"
+        ]
+      },
+      "caffeine_residue_mg": {
+        "mu": 25.615,
+        "sigma": 58.043,
+        "n_hard": 0,
+        "n_z": 1,
+        "detail": [
+          "row 94: X=762.01  Z=+12.69"
+        ]
+      },
+      "sleep_debt_min": {
+        "mu": 465.694,
+        "sigma": 233.916,
+        "n_hard": 0,
+        "n_z": 0,
+        "detail": []
+      },
+      "phase_delay_min": {
+        "mu": 7.564,
+        "sigma": 19.336,
+        "n_hard": 0,
+        "n_z": 5,
+        "detail": [
+          "row 1: X=86.64  Z=+4.09",
+          "row 101: X=-84.00  Z=-4.74",
+          "row 112: X=133.21  Z=+6.50",
+          "row 158: X=78.79  Z=+3.68",
+          "row 266: X=-66.71  Z=-3.84"
+        ]
+      },
+      "led_melanopic_lux": {
+        "mu": 106.02,
+        "sigma": 66.175,
+        "n_hard": 0,
+        "n_z": 2,
+        "detail": [
+          "row 134: X=338.30  Z=+3.51",
+          "row 252: X=342.99  Z=+3.58"
+        ]
+      }
+    }
+  },
+  "models": {
+    "단순: bluelight_adj_min": {
+      "label": "단순 모형 — bluelight_adj_min",
+      "n": 265,
+      "r2": 0.168,
+      "r2_adj": 0.165,
+      "f": 53.277,
+      "f_p": 0.0,
+      "terms": [
+        {
+          "name": "const",
+          "beta": -7.35,
+          "se": 2.135,
+          "t": -3.443,
+          "p": 0.001,
+          "beta_std": null,
+          "vif": null,
+          "sig": true
+        },
+        {
+          "name": "bluelight_adj_min",
+          "beta": 0.196,
+          "se": 0.027,
+          "t": 7.299,
+          "p": 0.0,
+          "beta_std": 0.41,
+          "vif": 1.0,
+          "sig": true
+        }
+      ],
+      "notes": [
+        "R² < 0.30 — 설명력이 약함 (실험계획서 기준: 0.30 이상이면 의미 있는 설명력)",
+        "표준화 β* 최대 예측 변수: bluelight_adj_min (β*=+0.410)"
+      ]
+    },
+    "단순: caffeine_residue_mg": {
+      "label": "단순 모형 — caffeine_residue_mg",
+      "n": 265,
+      "r2": 0.237,
+      "r2_adj": 0.234,
+      "f": 81.826,
+      "f_p": 0.0,
+      "terms": [
+        {
+          "name": "const",
+          "beta": 2.382,
+          "se": 0.96,
+          "t": 2.481,
+          "p": 0.014,
+          "beta_std": null,
+          "vif": null,
+          "sig": true
+        },
+        {
+          "name": "caffeine_residue_mg",
+          "beta": 0.203,
+          "se": 0.022,
+          "t": 9.046,
+          "p": 0.0,
+          "beta_std": 0.487,
+          "vif": 1.0,
+          "sig": true
+        }
+      ],
+      "notes": [
+        "R² < 0.30 — 설명력이 약함 (실험계획서 기준: 0.30 이상이면 의미 있는 설명력)",
+        "표준화 β* 최대 예측 변수: caffeine_residue_mg (β*=+0.487)"
+      ]
+    },
+    "단순: sleep_debt_min": {
+      "label": "단순 모형 — sleep_debt_min",
+      "n": 265,
+      "r2": 0.095,
+      "r2_adj": 0.092,
+      "f": 27.705,
+      "f_p": 0.0,
+      "terms": [
+        {
+          "name": "const",
+          "beta": -2.561,
+          "se": 2.011,
+          "t": -1.273,
+          "p": 0.204,
+          "beta_std": null,
+          "vif": null,
+          "sig": false
+        },
+        {
+          "name": "sleep_debt_min",
+          "beta": 0.02,
+          "se": 0.004,
+          "t": 5.264,
+          "p": 0.0,
+          "beta_std": 0.309,
+          "vif": 1.0,
+          "sig": true
+        }
+      ],
+      "notes": [
+        "R² < 0.30 — 설명력이 약함 (실험계획서 기준: 0.30 이상이면 의미 있는 설명력)",
+        "표준화 β* 최대 예측 변수: sleep_debt_min (β*=+0.309)"
+      ]
+    },
+    "통합: X1+X2+X3": {
+      "label": "통합 모형 — X₁+X₂+X₃",
+      "n": 265,
+      "r2": 0.517,
+      "r2_adj": 0.512,
+      "f": 93.231,
+      "f_p": 0.0,
+      "terms": [
+        {
+          "name": "const",
+          "beta": -21.049,
+          "se": 2.054,
+          "t": -10.248,
+          "p": 0.0,
+          "beta_std": null,
+          "vif": null,
+          "sig": true
+        },
+        {
+          "name": "bluelight_adj_min",
+          "beta": 0.183,
+          "se": 0.021,
+          "t": 8.776,
+          "p": 0.0,
+          "beta_std": 0.383,
+          "vif": 1.028,
+          "sig": true
+        },
+        {
+          "name": "caffeine_residue_mg",
+          "beta": 0.226,
+          "se": 0.018,
+          "t": 12.495,
+          "p": 0.0,
+          "beta_std": 0.542,
+          "vif": 1.016,
+          "sig": true
+        },
+        {
+          "name": "sleep_debt_min",
+          "beta": 0.02,
+          "se": 0.003,
+          "t": 7.12,
+          "p": 0.0,
+          "beta_std": 0.312,
+          "vif": 1.041,
+          "sig": true
+        }
+      ],
+      "notes": [
+        "표준화 β* 최대 예측 변수: caffeine_residue_mg (β*=+0.542)"
+      ]
+    },
+    "통합+공변량": {
+      "label": "통합 모형 + 공변량 (크로노타입·운동·LED)",
+      "n": 265,
+      "r2": 0.537,
+      "r2_adj": 0.527,
+      "f": 49.969,
+      "f_p": 0.0,
+      "terms": [
+        {
+          "name": "const",
+          "beta": -27.508,
+          "se": 3.269,
+          "t": -8.415,
+          "p": 0.0,
+          "beta_std": null,
+          "vif": null,
+          "sig": true
+        },
+        {
+          "name": "bluelight_adj_min",
+          "beta": 0.187,
+          "se": 0.021,
+          "t": 8.988,
+          "p": 0.0,
+          "beta_std": 0.39,
+          "vif": 1.053,
+          "sig": true
+        },
+        {
+          "name": "caffeine_residue_mg",
+          "beta": 0.226,
+          "se": 0.018,
+          "t": 12.693,
+          "p": 0.0,
+          "beta_std": 0.542,
+          "vif": 1.017,
+          "sig": true
+        },
+        {
+          "name": "sleep_debt_min",
+          "beta": 0.028,
+          "se": 0.006,
+          "t": 4.991,
+          "p": 0.0,
+          "beta_std": 0.426,
+          "vif": 4.058,
+          "sig": true
+        },
+        {
+          "name": "chronotype_offset_min",
+          "beta": -0.043,
+          "se": 0.028,
+          "t": -1.542,
+          "p": 0.124,
+          "beta_std": -0.13,
+          "vif": 3.972,
+          "sig": false
+        },
+        {
+          "name": "exercised",
+          "beta": -3.483,
+          "se": 1.735,
+          "t": -2.008,
+          "p": 0.046,
+          "beta_std": -0.085,
+          "vif": 1.008,
+          "sig": true
+        },
+        {
+          "name": "led_evening_load",
+          "beta": 11.689,
+          "se": 4.601,
+          "t": 2.54,
+          "p": 0.012,
+          "beta_std": 0.109,
+          "vif": 1.032,
+          "sig": true
+        }
+      ],
+      "notes": [
+        "표준화 β* 최대 예측 변수: caffeine_residue_mg (β*=+0.542)"
+      ]
+    },
+    "피험자 고정효과(within)": {
+      "label": "피험자 고정효과(within)",
+      "n": 265,
+      "r2": 0.557,
+      "r2_adj": 0.471,
+      "f": 55.554,
+      "f_p": 0.0,
+      "terms": [
+        {
+          "name": "bluelight_adj_min",
+          "beta": 0.194,
+          "se": 0.021,
+          "t": 9.138,
+          "p": 0.0,
+          "beta_std": 0.418,
+          "vif": 1.041,
+          "sig": true
+        },
+        {
+          "name": "caffeine_residue_mg",
+          "beta": 0.239,
+          "se": 0.018,
+          "t": 13.061,
+          "p": 0.0,
+          "beta_std": 0.59,
+          "vif": 1.018,
+          "sig": true
+        },
+        {
+          "name": "sleep_debt_min",
+          "beta": 0.03,
+          "se": 0.007,
+          "t": 4.564,
+          "p": 0.0,
+          "beta_std": 0.21,
+          "vif": 1.061,
+          "sig": true
+        },
+        {
+          "name": "exercised",
+          "beta": -4.444,
+          "se": 1.806,
+          "t": -2.461,
+          "p": 0.015,
+          "beta_std": -0.111,
+          "vif": 1.006,
+          "sig": true
+        },
+        {
+          "name": "led_evening_load",
+          "beta": 14.319,
+          "se": 5.135,
+          "t": 2.789,
+          "p": 0.006,
+          "beta_std": 0.127,
+          "vif": 1.037,
+          "sig": true
+        }
+      ],
+      "notes": [
+        "피험자 39명의 고정효과 흡수 (df_resid=221)",
+        "시불변으로 탈락: chronotype_offset_min — 개인 baseline/MSFsc 모형에서 다룰 것",
+        "R² 는 within R² (개인차 제거 후 설명분산 비율)",
+        "표준화 β* 최대 예측 변수: caffeine_residue_mg (β*=+0.590)"
+      ]
+    }
+  },
+  "h4": "H4(통합 모형 우월성): 최고 단순 R²=0.237 → 통합 R²=0.517 (ΔR²=+0.280)  ⇒ 지지됨 ✓",
+  "feature_accuracy": {
+    "bluelight_adj_min": {
+      "r": 0.939,
+      "mae": 4.249
+    },
+    "caffeine_residue_mg": {
+      "r": 0.999,
+      "mae": 2.751
+    },
+    "sleep_debt_min": {
+      "r": 1.0,
+      "mae": 0.425
+    },
+    "led_evening_load": {
+      "r": 0.963,
+      "mae": 0.011
+    }
+  },
+  "distributions": {
+    "phase_delay_min": {
+      "counts": [
+        1,
+        1,
+        2,
+        1,
+        6,
+        13,
+        10,
+        15,
+        25,
+        35,
+        25,
+        35,
+        34,
+        17,
+        19,
+        7,
+        5,
+        5,
+        4,
+        2,
+        1,
+        2
+      ],
+      "edges": [
+        -40.1,
+        -35.8,
+        -31.5,
+        -27.2,
+        -22.8,
+        -18.5,
+        -14.2,
+        -9.9,
+        -5.5,
+        -1.2,
+        3.1,
+        7.4,
+        11.8,
+        16.1,
+        20.4,
+        24.7,
+        29.1,
+        33.4,
+        37.7,
+        42.0,
+        46.4,
+        50.7,
+        55.0
+      ],
+      "mean": 6.932,
+      "sd": 15.214
+    },
+    "bluelight_adj_min": {
+      "counts": [
+        3,
+        7,
+        18,
+        23,
+        22,
+        22,
+        26,
+        18,
+        28,
+        14,
+        22,
+        8,
+        8,
+        7,
+        13,
+        9,
+        5,
+        4,
+        1,
+        3,
+        2,
+        2
+      ],
+      "edges": [
+        15.2,
+        22.1,
+        29.1,
+        36.0,
+        43.0,
+        49.9,
+        56.9,
+        63.8,
+        70.8,
+        77.7,
+        84.7,
+        91.6,
+        98.5,
+        105.5,
+        112.4,
+        119.4,
+        126.3,
+        133.3,
+        140.2,
+        147.2,
+        154.1,
+        161.1,
+        168.0
+      ],
+      "mean": 72.714,
+      "sd": 31.791
+    },
+    "caffeine_residue_mg": {
+      "counts": [
+        171,
+        0,
+        7,
+        13,
+        3,
+        7,
+        11,
+        4,
+        7,
+        5,
+        5,
+        4,
+        8,
+        7,
+        2,
+        3,
+        0,
+        3,
+        1,
+        2,
+        1,
+        1
+      ],
+      "edges": [
+        0.0,
+        7.0,
+        14.1,
+        21.1,
+        28.2,
+        35.2,
+        42.2,
+        49.3,
+        56.3,
+        63.4,
+        70.4,
+        77.4,
+        84.5,
+        91.5,
+        98.6,
+        105.6,
+        112.6,
+        119.7,
+        126.7,
+        133.8,
+        140.8,
+        147.8,
+        154.9
+      ],
+      "mean": 22.361,
+      "sd": 36.423
+    },
+    "sleep_debt_min": {
+      "counts": [
+        9,
+        2,
+        5,
+        11,
+        11,
+        28,
+        20,
+        18,
+        18,
+        32,
+        19,
+        12,
+        15,
+        14,
+        10,
+        9,
+        12,
+        6,
+        4,
+        4,
+        1,
+        5
+      ],
+      "edges": [
+        0.0,
+        48.4,
+        96.7,
+        145.1,
+        193.5,
+        241.8,
+        290.2,
+        338.5,
+        386.9,
+        435.3,
+        483.6,
+        532.0,
+        580.4,
+        628.7,
+        677.1,
+        725.5,
+        773.8,
+        822.2,
+        870.5,
+        918.9,
+        967.3,
+        1015.6,
+        1064.0
+      ],
+      "mean": 469.079,
+      "sd": 232.078
+    },
+    "led_evening_load": {
+      "counts": [
+        3,
+        1,
+        2,
+        9,
+        15,
+        14,
+        25,
+        32,
+        23,
+        23,
+        20,
+        20,
+        12,
+        10,
+        6,
+        9,
+        6,
+        5,
+        4,
+        12,
+        6,
+        8
+      ],
+      "edges": [
+        0.0,
+        0.1,
+        0.1,
+        0.1,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.3,
+        0.3,
+        0.3,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.5,
+        0.5,
+        0.5,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.7
+      ],
+      "mean": 0.335,
+      "sd": 0.142
+    }
+  },
+  "correlation": {
+    "target": "phase_delay_min",
+    "variables": [
+      "bluelight_adj_min",
+      "caffeine_residue_mg",
+      "sleep_debt_min",
+      "chronotype_offset_min",
+      "exercised",
+      "led_evening_load"
+    ],
+    "method": "spearman",
+    "method_reason": "bluelight_adj_min, caffeine_residue_mg, sleep_debt_min, chronotype_offset_min, led_evening_load 비정규(Shapiro p<0.05) → 스피어만 ρ 사용 (§5-2)",
+    "multicollinearity_threshold": 0.8,
+    "normality": [
+      {
+        "column": "phase_delay_min",
+        "n": 265,
+        "W": 0.992,
+        "p": 0.172,
+        "is_normal": true,
+        "note": ""
+      },
+      {
+        "column": "bluelight_adj_min",
+        "n": 265,
+        "W": 0.958,
+        "p": 0.0,
+        "is_normal": false,
+        "note": ""
+      },
+      {
+        "column": "caffeine_residue_mg",
+        "n": 265,
+        "W": 0.676,
+        "p": 0.0,
+        "is_normal": false,
+        "note": ""
+      },
+      {
+        "column": "sleep_debt_min",
+        "n": 265,
+        "W": 0.984,
+        "p": 0.004,
+        "is_normal": false,
+        "note": ""
+      },
+      {
+        "column": "chronotype_offset_min",
+        "n": 265,
+        "W": 0.906,
+        "p": 0.0,
+        "is_normal": false,
+        "note": ""
+      },
+      {
+        "column": "exercised",
+        "n": 265,
+        "W": null,
+        "p": null,
+        "is_normal": false,
+        "note": "고유값 3 미만 — 정규성 검정 생략(비연속)"
+      },
+      {
+        "column": "led_evening_load",
+        "n": 265,
+        "W": 0.953,
+        "p": 0.0,
+        "is_normal": false,
+        "note": ""
+      }
+    ],
+    "target_corr": [
+      {
+        "a": "phase_delay_min",
+        "b": "bluelight_adj_min",
+        "pearson_r": 0.41,
+        "pearson_p": 0.0,
+        "spearman_r": 0.438,
+        "spearman_p": 0.0,
+        "flagged": false
+      },
+      {
+        "a": "phase_delay_min",
+        "b": "caffeine_residue_mg",
+        "pearson_r": 0.487,
+        "pearson_p": 0.0,
+        "spearman_r": 0.405,
+        "spearman_p": 0.0,
+        "flagged": false
+      },
+      {
+        "a": "phase_delay_min",
+        "b": "sleep_debt_min",
+        "pearson_r": 0.309,
+        "pearson_p": 0.0,
+        "spearman_r": 0.31,
+        "spearman_p": 0.0,
+        "flagged": false
+      },
+      {
+        "a": "phase_delay_min",
+        "b": "chronotype_offset_min",
+        "pearson_r": 0.23,
+        "pearson_p": 0.0,
+        "spearman_r": 0.243,
+        "spearman_p": 0.0,
+        "flagged": false
+      },
+      {
+        "a": "phase_delay_min",
+        "b": "exercised",
+        "pearson_r": -0.091,
+        "pearson_p": 0.14,
+        "spearman_r": -0.061,
+        "spearman_p": 0.323,
+        "flagged": false
+      },
+      {
+        "a": "phase_delay_min",
+        "b": "led_evening_load",
+        "pearson_r": 0.036,
+        "pearson_p": 0.562,
+        "spearman_r": -0.0,
+        "spearman_p": 0.998,
+        "flagged": false
+      }
+    ],
+    "matrix_labels": [
+      "phase_delay_min",
+      "bluelight_adj_min",
+      "caffeine_residue_mg",
+      "sleep_debt_min",
+      "chronotype_offset_min",
+      "exercised",
+      "led_evening_load"
+    ],
+    "pearson_matrix": [
+      [
+        1.0,
+        0.41,
+        0.487,
+        0.309,
+        0.23,
+        -0.091,
+        0.036
+      ],
+      [
+        0.41,
+        1.0,
+        -0.043,
+        0.163,
+        0.088,
+        0.007,
+        -0.13
+      ],
+      [
+        0.487,
+        -0.043,
+        1.0,
+        -0.122,
+        -0.089,
+        -0.026,
+        -0.001
+      ],
+      [
+        0.309,
+        0.163,
+        -0.122,
+        1.0,
+        0.861,
+        -0.013,
+        -0.032
+      ],
+      [
+        0.23,
+        0.088,
+        -0.089,
+        0.861,
+        1.0,
+        -0.044,
+        0.032
+      ],
+      [
+        -0.091,
+        0.007,
+        -0.026,
+        -0.013,
+        -0.044,
+        1.0,
+        0.049
+      ],
+      [
+        0.036,
+        -0.13,
+        -0.001,
+        -0.032,
+        0.032,
+        0.049,
+        1.0
+      ]
+    ],
+    "spearman_matrix": [
+      [
+        1.0,
+        0.438,
+        0.405,
+        0.31,
+        0.243,
+        -0.061,
+        -0.0
+      ],
+      [
+        0.438,
+        1.0,
+        -0.061,
+        0.165,
+        0.098,
+        -0.011,
+        -0.137
+      ],
+      [
+        0.405,
+        -0.061,
+        1.0,
+        -0.099,
+        -0.052,
+        -0.03,
+        -0.057
+      ],
+      [
+        0.31,
+        0.165,
+        -0.099,
+        1.0,
+        0.854,
+        -0.028,
+        -0.008
+      ],
+      [
+        0.243,
+        0.098,
+        -0.052,
+        0.854,
+        1.0,
+        -0.058,
+        0.037
+      ],
+      [
+        -0.061,
+        -0.011,
+        -0.03,
+        -0.028,
+        -0.058,
+        1.0,
+        0.025
+      ],
+      [
+        -0.0,
+        -0.137,
+        -0.057,
+        -0.008,
+        0.037,
+        0.025,
+        1.0
+      ]
+    ],
+    "high_pairs": [
+      {
+        "a": "sleep_debt_min",
+        "b": "chronotype_offset_min",
+        "pearson_r": 0.861,
+        "pearson_p": 0.0,
+        "spearman_r": 0.854,
+        "spearman_p": 0.0,
+        "flagged": true
+      }
+    ],
+    "verdict": "Y 와 가장 강한 상관: bluelight_adj_min (spearman r=+0.438)\n⚠ 다중공선성: sleep_debt_min ↔ chronotype_offset_min  pearson +0.86 · spearman +0.85  (VIF 4.1 / 4.0) — |r|>0.8, 통합/제거 검토 (§5-2)"
+  },
+  "caffeine_decay": {
+    "hours": [
+      0.0,
+      0.31,
+      0.62,
+      0.92,
+      1.23,
+      1.54,
+      1.85,
+      2.15,
+      2.46,
+      2.77,
+      3.08,
+      3.38,
+      3.69,
+      4.0,
+      4.31,
+      4.62,
+      4.92,
+      5.23,
+      5.54,
+      5.85,
+      6.15,
+      6.46,
+      6.77,
+      7.08,
+      7.38,
+      7.69,
+      8.0,
+      8.31,
+      8.62,
+      8.92,
+      9.23,
+      9.54,
+      9.85,
+      10.15,
+      10.46,
+      10.77,
+      11.08,
+      11.38,
+      11.69,
+      12.0
+    ],
+    "series": {
+      "에너지드링크 80mg": [
+        80.0,
+        76.96,
+        74.03,
+        71.21,
+        68.51,
+        65.9,
+        63.39,
+        60.98,
+        58.66,
+        56.43,
+        54.29,
+        52.22,
+        50.23,
+        48.32,
+        46.49,
+        44.72,
+        43.02,
+        41.38,
+        39.81,
+        38.29,
+        36.84,
+        35.43,
+        34.09,
+        32.79,
+        31.54,
+        30.34,
+        29.19,
+        28.08,
+        27.01,
+        25.98,
+        25.0,
+        24.04,
+        23.13,
+        22.25,
+        21.4,
+        20.59,
+        19.81,
+        19.05,
+        18.33,
+        17.63
+      ],
+      "아메리카노 125mg": [
+        125.0,
+        120.25,
+        115.67,
+        111.27,
+        107.04,
+        102.97,
+        99.05,
+        95.28,
+        91.66,
+        88.17,
+        84.82,
+        81.59,
+        78.49,
+        75.51,
+        72.63,
+        69.87,
+        67.21,
+        64.66,
+        62.2,
+        59.83,
+        57.56,
+        55.37,
+        53.26,
+        51.24,
+        49.29,
+        47.41,
+        45.61,
+        43.87,
+        42.21,
+        40.6,
+        39.06,
+        37.57,
+        36.14,
+        34.77,
+        33.44,
+        32.17,
+        30.95,
+        29.77,
+        28.64,
+        27.55
+      ],
+      "커피 2잔 250mg": [
+        250.0,
+        240.49,
+        231.34,
+        222.54,
+        214.08,
+        205.94,
+        198.1,
+        190.57,
+        183.32,
+        176.35,
+        169.64,
+        163.19,
+        156.98,
+        151.01,
+        145.27,
+        139.74,
+        134.43,
+        129.31,
+        124.4,
+        119.66,
+        115.11,
+        110.73,
+        106.52,
+        102.47,
+        98.57,
+        94.82,
+        91.22,
+        87.75,
+        84.41,
+        81.2,
+        78.11,
+        75.14,
+        72.28,
+        69.53,
+        66.89,
+        64.34,
+        61.9,
+        59.54,
+        57.28,
+        55.1
+      ]
+    }
+  },
+  "led": {
+    "ccts": [
+      2700,
+      2900,
+      3100,
+      3300,
+      3500,
+      3700,
+      3900,
+      4100,
+      4300,
+      4500,
+      4700,
+      4900,
+      5100,
+      5300,
+      5500,
+      5700,
+      5900,
+      6100,
+      6300,
+      6500
+    ],
+    "luxes": [
+      20,
+      60,
+      100,
+      140,
+      180,
+      220,
+      260,
+      300,
+      340,
+      380
+    ],
+    "grid": [
+      [
+        0.043,
+        0.045,
+        0.047,
+        0.05,
+        0.052,
+        0.054,
+        0.056,
+        0.058,
+        0.06,
+        0.062,
+        0.064,
+        0.066,
+        0.068,
+        0.07,
+        0.072,
+        0.075,
+        0.077,
+        0.079,
+        0.081,
+        0.083
+      ],
+      [
+        0.119,
+        0.125,
+        0.13,
+        0.136,
+        0.141,
+        0.146,
+        0.152,
+        0.157,
+        0.162,
+        0.167,
+        0.172,
+        0.177,
+        0.182,
+        0.187,
+        0.192,
+        0.197,
+        0.202,
+        0.206,
+        0.211,
+        0.216
+      ],
+      [
+        0.186,
+        0.194,
+        0.202,
+        0.209,
+        0.217,
+        0.225,
+        0.232,
+        0.24,
+        0.247,
+        0.254,
+        0.261,
+        0.268,
+        0.275,
+        0.282,
+        0.288,
+        0.295,
+        0.301,
+        0.308,
+        0.314,
+        0.321
+      ],
+      [
+        0.244,
+        0.254,
+        0.264,
+        0.274,
+        0.283,
+        0.292,
+        0.301,
+        0.31,
+        0.319,
+        0.328,
+        0.337,
+        0.345,
+        0.353,
+        0.361,
+        0.369,
+        0.377,
+        0.385,
+        0.392,
+        0.4,
+        0.407
+      ],
+      [
+        0.296,
+        0.308,
+        0.319,
+        0.331,
+        0.341,
+        0.352,
+        0.362,
+        0.372,
+        0.383,
+        0.392,
+        0.402,
+        0.411,
+        0.421,
+        0.43,
+        0.439,
+        0.447,
+        0.456,
+        0.465,
+        0.473,
+        0.481
+      ],
+      [
+        0.344,
+        0.357,
+        0.369,
+        0.382,
+        0.393,
+        0.405,
+        0.417,
+        0.428,
+        0.439,
+        0.449,
+        0.46,
+        0.47,
+        0.48,
+        0.49,
+        0.5,
+        0.509,
+        0.518,
+        0.528,
+        0.536,
+        0.545
+      ],
+      [
+        0.387,
+        0.401,
+        0.414,
+        0.428,
+        0.441,
+        0.453,
+        0.466,
+        0.477,
+        0.489,
+        0.5,
+        0.512,
+        0.523,
+        0.533,
+        0.544,
+        0.554,
+        0.564,
+        0.574,
+        0.584,
+        0.593,
+        0.602
+      ],
+      [
+        0.427,
+        0.442,
+        0.456,
+        0.47,
+        0.484,
+        0.497,
+        0.51,
+        0.523,
+        0.535,
+        0.547,
+        0.559,
+        0.57,
+        0.581,
+        0.592,
+        0.603,
+        0.614,
+        0.624,
+        0.634,
+        0.644,
+        0.653
+      ],
+      [
+        0.464,
+        0.479,
+        0.494,
+        0.509,
+        0.523,
+        0.537,
+        0.551,
+        0.564,
+        0.577,
+        0.589,
+        0.602,
+        0.614,
+        0.625,
+        0.636,
+        0.648,
+        0.658,
+        0.669,
+        0.68,
+        0.69,
+        0.7
+      ],
+      [
+        0.498,
+        0.514,
+        0.53,
+        0.545,
+        0.56,
+        0.575,
+        0.589,
+        0.602,
+        0.616,
+        0.629,
+        0.641,
+        0.653,
+        0.665,
+        0.677,
+        0.689,
+        0.7,
+        0.711,
+        0.722,
+        0.732,
+        0.742
+      ]
+    ],
+    "mel_der_curve": [
+      {
+        "cct": 2700,
+        "mel_der": 0.45
+      },
+      {
+        "cct": 2950,
+        "mel_der": 0.48
+      },
+      {
+        "cct": 3200,
+        "mel_der": 0.509
+      },
+      {
+        "cct": 3450,
+        "mel_der": 0.539
+      },
+      {
+        "cct": 3700,
+        "mel_der": 0.568
+      },
+      {
+        "cct": 3950,
+        "mel_der": 0.598
+      },
+      {
+        "cct": 4200,
+        "mel_der": 0.628
+      },
+      {
+        "cct": 4450,
+        "mel_der": 0.657
+      },
+      {
+        "cct": 4700,
+        "mel_der": 0.687
+      },
+      {
+        "cct": 4950,
+        "mel_der": 0.716
+      },
+      {
+        "cct": 5200,
+        "mel_der": 0.746
+      },
+      {
+        "cct": 5450,
+        "mel_der": 0.776
+      },
+      {
+        "cct": 5700,
+        "mel_der": 0.805
+      },
+      {
+        "cct": 5950,
+        "mel_der": 0.835
+      },
+      {
+        "cct": 6200,
+        "mel_der": 0.865
+      },
+      {
+        "cct": 6450,
+        "mel_der": 0.894
+      }
+    ],
+    "assessments": [
+      {
+        "led_lux": 40,
+        "cct": 2700,
+        "melanopic_lux": 18.0,
+        "evening_load": 0.083,
+        "verdict": "양호 — 저녁 조명 환경이 멜라토닌 분비를 크게 방해하지 않음",
+        "rec": "현 수준 유지. 취침 1시간 전 추가로 조도를 낮추면 이상적."
+      },
+      {
+        "led_lux": 150,
+        "cct": 4000,
+        "melanopic_lux": 90.58,
+        "evening_load": 0.322,
+        "verdict": "양호 — 저녁 조명 환경이 멜라토닌 분비를 크게 방해하지 않음",
+        "rec": "현 수준 유지. 취침 1시간 전 추가로 조도를 낮추면 이상적."
+      },
+      {
+        "led_lux": 300,
+        "cct": 5000,
+        "melanopic_lux": 216.72,
+        "evening_load": 0.576,
+        "verdict": "주의 — 저녁 조명이 위상 지연에 중간 정도 기여",
+        "rec": "취침 2시간 전부터 3000K 이하 · 100 lux 이하로 전환 권장 (HCL 저녁 모드)."
+      },
+      {
+        "led_lux": 420,
+        "cct": 6500,
+        "melanopic_lux": 378.0,
+        "evening_load": 0.781,
+        "verdict": "경고 — 고색온도·고조도 조명이 멜라토닌을 강하게 억제",
+        "rec": "취침 전 청색광 강한 전등 소등, 간접 조명(2700K)만 사용. 정책 파트 HCL 제언의 근거 구간."
+      }
+    ]
+  },
+  "msfsc": [
+    {
+      "subject_id": "S018",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 480.5,
+      "sd_f_min": 615.0,
+      "sd_week_min": 518.9,
+      "msf_clock": "04:10",
+      "msfsc_min": 1622.8,
+      "msfsc_clock": "03:03",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S016",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 585.9,
+      "sd_f_min": 653.5,
+      "sd_week_min": 605.2,
+      "msf_clock": "04:02",
+      "msfsc_min": 1648.5,
+      "msfsc_clock": "03:28",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S010",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 421.0,
+      "sd_f_min": 548.5,
+      "sd_week_min": 457.4,
+      "msf_clock": "04:35",
+      "msfsc_min": 1651.5,
+      "msfsc_clock": "03:32",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S001",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 452.5,
+      "sd_f_min": 565.2,
+      "sd_week_min": 484.7,
+      "msf_clock": "04:34",
+      "msfsc_min": 1657.5,
+      "msfsc_clock": "03:38",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S002",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 421.4,
+      "sd_f_min": 585.2,
+      "sd_week_min": 468.2,
+      "msf_clock": "04:59",
+      "msfsc_min": 1657.5,
+      "msfsc_clock": "03:38",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S030",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 403.5,
+      "sd_f_min": 528.2,
+      "sd_week_min": 439.1,
+      "msf_clock": "04:46",
+      "msfsc_min": 1663.5,
+      "msfsc_clock": "03:44",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S015",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 384.6,
+      "sd_f_min": 547.8,
+      "sd_week_min": 431.2,
+      "msf_clock": "05:07",
+      "msfsc_min": 1665.0,
+      "msfsc_clock": "03:45",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S022",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 451.0,
+      "sd_f_min": 594.8,
+      "sd_week_min": 492.1,
+      "msf_clock": "04:57",
+      "msfsc_min": 1665.0,
+      "msfsc_clock": "03:45",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S023",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 385.7,
+      "sd_f_min": 518.5,
+      "sd_week_min": 423.6,
+      "msf_clock": "04:53",
+      "msfsc_min": 1666.3,
+      "msfsc_clock": "03:46",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S020",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 400.7,
+      "sd_f_min": 524.5,
+      "sd_week_min": 436.1,
+      "msf_clock": "04:48",
+      "msfsc_min": 1666.3,
+      "msfsc_clock": "03:46",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S006",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 367.2,
+      "sd_f_min": 506.0,
+      "sd_week_min": 406.9,
+      "msf_clock": "05:01",
+      "msfsc_min": 1671.3,
+      "msfsc_clock": "03:51",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S040",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 394.8,
+      "sd_f_min": 520.5,
+      "sd_week_min": 430.7,
+      "msf_clock": "04:57",
+      "msfsc_min": 1674.2,
+      "msfsc_clock": "03:54",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S037",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 368.5,
+      "sd_f_min": 508.0,
+      "sd_week_min": 408.4,
+      "msf_clock": "05:05",
+      "msfsc_min": 1675.5,
+      "msfsc_clock": "03:56",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S024",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 396.1,
+      "sd_f_min": 495.0,
+      "sd_week_min": 424.4,
+      "msf_clock": "04:48",
+      "msfsc_min": 1678.5,
+      "msfsc_clock": "03:58",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S012",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 375.1,
+      "sd_f_min": 521.0,
+      "sd_week_min": 416.8,
+      "msf_clock": "05:13",
+      "msfsc_min": 1680.0,
+      "msfsc_clock": "04:00",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S026",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 389.5,
+      "sd_f_min": 533.2,
+      "sd_week_min": 430.6,
+      "msf_clock": "05:13",
+      "msfsc_min": 1681.2,
+      "msfsc_clock": "04:01",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S031",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 383.9,
+      "sd_f_min": 510.5,
+      "sd_week_min": 420.1,
+      "msf_clock": "05:05",
+      "msfsc_min": 1681.5,
+      "msfsc_clock": "04:02",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S009",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 359.2,
+      "sd_f_min": 513.0,
+      "sd_week_min": 403.1,
+      "msf_clock": "05:20",
+      "msfsc_min": 1682.6,
+      "msfsc_clock": "04:03",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S021",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 391.1,
+      "sd_f_min": 514.0,
+      "sd_week_min": 426.2,
+      "msf_clock": "05:06",
+      "msfsc_min": 1684.8,
+      "msfsc_clock": "04:05",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S028",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 368.5,
+      "sd_f_min": 483.0,
+      "sd_week_min": 401.2,
+      "msf_clock": "05:08",
+      "msfsc_min": 1690.5,
+      "msfsc_clock": "04:10",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S005",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 370.9,
+      "sd_f_min": 506.5,
+      "sd_week_min": 409.6,
+      "msf_clock": "05:22",
+      "msfsc_min": 1694.0,
+      "msfsc_clock": "04:14",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S003",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 332.1,
+      "sd_f_min": 454.8,
+      "sd_week_min": 367.1,
+      "msf_clock": "05:16",
+      "msfsc_min": 1695.0,
+      "msfsc_clock": "04:15",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S035",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 330.1,
+      "sd_f_min": 422.0,
+      "sd_week_min": 356.4,
+      "msf_clock": "05:08",
+      "msfsc_min": 1701.5,
+      "msfsc_clock": "04:22",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S027",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 335.3,
+      "sd_f_min": 469.5,
+      "sd_week_min": 373.6,
+      "msf_clock": "05:30",
+      "msfsc_min": 1702.4,
+      "msfsc_clock": "04:22",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S034",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 354.3,
+      "sd_f_min": 463.0,
+      "sd_week_min": 385.4,
+      "msf_clock": "05:17",
+      "msfsc_min": 1702.9,
+      "msfsc_clock": "04:23",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S025",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 341.6,
+      "sd_f_min": 490.2,
+      "sd_week_min": 384.1,
+      "msf_clock": "05:38",
+      "msfsc_min": 1704.0,
+      "msfsc_clock": "04:24",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S039",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 286.2,
+      "sd_f_min": 447.5,
+      "sd_week_min": 332.3,
+      "msf_clock": "05:46",
+      "msfsc_min": 1704.8,
+      "msfsc_clock": "04:25",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S004",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 333.9,
+      "sd_f_min": 498.2,
+      "sd_week_min": 380.9,
+      "msf_clock": "05:47",
+      "msfsc_min": 1705.0,
+      "msfsc_clock": "04:25",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S013",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 341.5,
+      "sd_f_min": 481.0,
+      "sd_week_min": 381.4,
+      "msf_clock": "05:36",
+      "msfsc_min": 1706.2,
+      "msfsc_clock": "04:26",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S038",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 337.7,
+      "sd_f_min": 445.5,
+      "sd_week_min": 368.5,
+      "msf_clock": "05:28",
+      "msfsc_min": 1713.8,
+      "msfsc_clock": "04:34",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S007",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 328.2,
+      "sd_f_min": 477.0,
+      "sd_week_min": 370.7,
+      "msf_clock": "05:50",
+      "msfsc_min": 1715.8,
+      "msfsc_clock": "04:36",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S036",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 506.1,
+      "sd_f_min": 516.8,
+      "sd_week_min": 509.1,
+      "msf_clock": "04:45",
+      "msfsc_min": 1719.8,
+      "msfsc_clock": "04:40",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S008",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 309.9,
+      "sd_f_min": 439.8,
+      "sd_week_min": 347.0,
+      "msf_clock": "05:47",
+      "msfsc_min": 1722.0,
+      "msfsc_clock": "04:42",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S011",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 282.3,
+      "sd_f_min": 387.2,
+      "sd_week_min": 312.3,
+      "msf_clock": "05:39",
+      "msfsc_min": 1726.9,
+      "msfsc_clock": "04:47",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S017",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 492.5,
+      "sd_f_min": 499.2,
+      "sd_week_min": 494.4,
+      "msf_clock": "04:59",
+      "msfsc_min": 1735.5,
+      "msfsc_clock": "04:56",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S029",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 312.5,
+      "sd_f_min": 403.5,
+      "sd_week_min": 338.5,
+      "msf_clock": "05:46",
+      "msfsc_min": 1740.5,
+      "msfsc_clock": "05:00",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S019",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 291.8,
+      "sd_f_min": 426.2,
+      "sd_week_min": 330.2,
+      "msf_clock": "06:11",
+      "msfsc_min": 1743.9,
+      "msfsc_clock": "05:04",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S014",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 283.5,
+      "sd_f_min": 394.8,
+      "sd_week_min": 315.3,
+      "msf_clock": "06:04",
+      "msfsc_min": 1748.5,
+      "msfsc_clock": "05:08",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S032",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 290.1,
+      "sd_f_min": 402.8,
+      "sd_week_min": 322.3,
+      "msf_clock": "06:07",
+      "msfsc_min": 1750.5,
+      "msfsc_clock": "05:10",
+      "correction_applied": true,
+      "warnings": ""
+    },
+    {
+      "subject_id": "S033",
+      "n_work": 10,
+      "n_free": 4,
+      "sd_w_min": 439.7,
+      "sd_f_min": 437.8,
+      "sd_week_min": 439.1,
+      "msf_clock": "05:35",
+      "msfsc_min": 1775.1,
+      "msfsc_clock": "05:35",
+      "correction_applied": false,
+      "warnings": "SD_f ≤ SD_w — 수면부채 보정 미적용 (MSFsc = MSF)"
+    }
+  ],
+  "chronotype_distribution": {
+    "intermediate": 16,
+    "moderate_evening": 10,
+    "moderate_morning": 6,
+    "definite_evening": 6,
+    "definite_morning": 2
+  },
+  "schema_fields": [
+    {
+      "field": "subject_id",
+      "type": "string(uuid)",
+      "source": "시스템",
+      "since": "0.1"
+    },
+    {
+      "field": "survey_date",
+      "type": "date",
+      "source": "설문",
+      "since": "0.1"
+    },
+    {
+      "field": "day_type",
+      "type": "enum(work|free)",
+      "source": "설문·달력",
+      "since": "0.1"
+    },
+    {
+      "field": "sleep_onset",
+      "type": "timestamp",
+      "source": "오픈 API/설문",
+      "since": "0.1"
+    },
+    {
+      "field": "sleep_wake",
+      "type": "timestamp",
+      "source": "오픈 API/설문",
+      "since": "0.1"
+    },
+    {
+      "field": "caffeine_intake",
+      "type": "float(mg)",
+      "source": "약학 파트",
+      "since": "0.1"
+    },
+    {
+      "field": "bluelight_duration",
+      "type": "int(min)",
+      "source": "생명공학 파트",
+      "since": "0.1"
+    },
+    {
+      "field": "led_lux",
+      "type": "float(lux)",
+      "source": "정책 파트(HCL)",
+      "since": "0.2"
+    },
+    {
+      "field": "led_color_temp",
+      "type": "int(K)",
+      "source": "생명공학 파트",
+      "since": "0.2"
+    },
+    {
+      "field": "brain_peak_score",
+      "type": "float(0~24)",
+      "source": "뇌과학 파트",
+      "since": "0.1"
+    },
+    {
+      "field": "exercised",
+      "type": "bool",
+      "source": "설문(보조)",
+      "since": "0.1"
+    }
+  ]
+}

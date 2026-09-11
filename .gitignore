@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# 파이프라인 산출물 (재생성 가능)
+pipeline/outputs/
+# dashboard/index.html · mock_data.json 은 바로 열어볼 수 있게 커밋 유지
+
+# 시크릿 · 토큰
+api_clients/.fitbit_token.json
+.env
+*.env
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db

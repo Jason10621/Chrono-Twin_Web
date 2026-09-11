@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --primary: 252 80% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 280 80% 65%;
+    --accent-foreground: 0 0% 100%;
+    
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-white/10;
+  }
+  body {
+    @apply bg-background text-foreground bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-background via-background to-secondary/30 min-h-screen font-sans antialiased;
+  }
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl;
+}
+
+/* ── Chrono-Twin 인터랙티브 데모 ── */
+@keyframes jetlag-dash {
+  to { stroke-dashoffset: -240; }
+}
+.jetlag-arc {
+  animation: jetlag-dash 6s linear infinite;
+}
+@keyframes jetlag-pulse {
+  0%, 100% { opacity: 0.55; r: 18; }
+  50% { opacity: 1; r: 24; }
+}
+.jetlag-pulse {
+  animation: jetlag-pulse 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.ct-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+.ct-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(129, 106, 245, 0.18);
+  transition: transform 0.15s ease;
+}
+.ct-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.ct-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+}
+
+.ct-toggle {
+  @apply px-3 py-1.5 rounded-full text-xs font-mono border transition-colors;
+}
+.ct-toggle-off {
+  @apply border-white/15 text-white/50 hover:text-white/80 hover:border-white/30;
+}
+.ct-toggle-on {
+  @apply border-primary/60 bg-primary/20 text-white;
+}
