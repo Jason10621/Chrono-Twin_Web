@@ -12,7 +12,9 @@ Chrono-Twin_Web/
 ├── dashboard/        파이프라인 콘솔 (목업 데이터, 순수 SVG)
 │   └── index.html    →  브라우저로 바로 열기
 ├── backend/          FastAPI — 수집 스키마 v0.2 (led_lux·led_color_temp) · 분석 엔드포인트
-└── frontend/         Next.js — 3D Chrono-Twin (기존 스캐폴드)
+├── frontend/         Next.js — 3D Chrono-Twin 아바타 · 세계 시차 지도 · 정책 대시보드 링크
+│   └── public/dashboard.html   dashboard/index.html 사본 (로컬 서빙용, /dashboard.html)
+└── tests/            pytest 81개 (스키마 · 파생계산 · ETL · 상관분석 · 이상치 · API)
 ```
 
 ## 빠른 시작
@@ -22,8 +24,16 @@ pip install -r pipeline/requirements.txt
 
 python -m pipeline.run_pipeline          # 파이프라인 전 구간 (더미 40명×14일)
 python -m api_clients.live_test          # 무료 API 3종 실제 호출 테스트
-python -m pytest                         # 전체 테스트 (76개)
+python -m pytest                         # 전체 테스트 (81개)
 python dashboard/build.py                # 대시보드 재생성
+```
+
+프론트엔드(3D 아바타 인터랙티브 데모)는 별도로 실행:
+
+```bash
+cd frontend
+npm install
+npm run dev                              # http://localhost:3000
 ```
 
 ## 수집 스키마 v0.2.0
