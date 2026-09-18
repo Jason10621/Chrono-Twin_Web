@@ -163,3 +163,97 @@ export const SEVERITY_LABEL: Record<ChronoTwinResult["severity"], string> = {
   poor: "경고",
   severe: "심각",
 };
+
+/* ════════════════════════════════════════════════════════════════
+ * 3주차 "웹사이트 적용 방안" — 팀원 제안 기반 확장
+ * 유가빈(뇌과학): 단계별 경고 진단 카드, N3/REM 비대칭 손실
+ * 전윤서(생명공학): 카페인 컷오프 타임(골든타임) 역산
+ * 홍서준(약학): Dose Echo — 카페인 잔존량의 실생활 단위 환산
+ * ════════════════════════════════════════════════════════════════ */
+
+// ── 유가빈: 단계별 뇌과학적 경고 진단 (원자료: knowledge 유가빈 3주차 제안) ──
+export type PhaseDiagnosisLevel = "advanced" | "normal" | "moderate" | "severe";
+
+export interface PhaseDiagnosis {
+  level: PhaseDiagnosisLevel;
+  title: string;
+  detail: string;
+}
+
+export function diagnosePhaseDelay(phaseDelayMin: number): PhaseDiagnosis {
+  if (phaseDelayMin < 0) {
+    return {
+      level: "advanced",
+      title: "위상 앞당겨짐",
+      detail: "생체 시계가 오히려 계획보다 일찍 준비된 상태예요. 지금 습관을 유지해도 좋습니다.",
+    };
+  }
+  if (phaseDelayMin <= 50) {
+    return {
+      level: "normal",
+      title: "정상 범위",
+      detail: "생체 시계와 오늘 습관 사이의 차이가 크지 않아요.",
+    };
+  }
+  if (phaseDelayMin <= 120) {
+    return {
+      level: "moderate",
+      title: "중등도 수면 위상 지연",
+      detail: "이 정도 지연이 반복되면 다음날 집중력·작업기억이 눈에 띄게 떨어질 수 있어요.",
+    };
+  }
+  return {
+    level: "severe",
+    title: "심각한 수면 위상 지연",
+    detail:
+      "전전두엽(판단·집중을 담당하는 뇌 영역) 기능 저하와 편도체 과활성화로 인한 감정 불안정 위험이 있는 수준이에요.",
+  };
+}
+
+export const PHASE_DIAGNOSIS_TONE: Record<PhaseDiagnosisLevel, string> = {
+  advanced: "#6ee7b7",
+  normal: "#4fa3e0",
+  moderate: "#f59e0b",
+  severe: "#f87171",
+};
+
+// ── 유가빈: 수면 단계별 비대칭 손실 (N3 −0.08·분, REM −0.12·분, 지연 1분당) ──
+export interface SleepStageLoss {
+  n3LossMin: number;
+  remLossMin: number;
+}
+
+export function sleepStageLoss(phaseDelayMin: number): SleepStageLoss {
+  const delay = Math.max(0, phaseDelayMin);
+  return {
+    n3LossMin: Math.round(delay * 0.08 * 10) / 10,
+    remLossMin: Math.round(delay * 0.12 * 10) / 10,
+  };
+}
+
+// ── 홍서준 "Dose Echo": 잔존 카페인을 실생활 단위로 환산 ──────────────
+export interface CaffeineFamiliarUnit {
+  key: "coffee" | "energy" | "candy";
+  label: string;
+  basis: string;
+  mgPerUnit: number;
+  count: number;
+}
+
+export function caffeineFamiliarUnits(residueMg: number): CaffeineFamiliarUnit[] {
+  const mg = Math.max(0, residueMg);
+  const defs: Omit<CaffeineFamiliarUnit, "count">[] = [
+    { key: "coffee", label: "아메리카노(톨)", basis: "150mg / 1잔", mgPerUnit: 150 },
+    { key: "energy", label: "에너지드링크", basis: "80mg / 1캔", mgPerUnit: 80 },
+    { key: "candy", label: "코피코 커피캔디", basis: "22.5mg / 1개", mgPerUnit: 22.5 },
+  ];
+  return defs.map((d) => ({ ...d, count: mg / d.mgPerUnit }));
+}
+
+// ── 전윤서: 카페인 컷오프(골든타임) — 안전 역치 아래로 내려가기까지 필요한 시간 ──
+const CAFFEINE_SAFE_THRESHOLD_MG = 50; // 아데노신 차단 영향이 미미해지는 근사 역치
+
+export function caffeineSafeHoursNeeded(doseMg: number): number {
+  if (doseMg <= CAFFEINE_SAFE_THRESHOLD_MG) return 0;
+  return CAFFEINE_HALF_LIFE_H * Math.log2(doseMg / CAFFEINE_SAFE_THRESHOLD_MG);
+}

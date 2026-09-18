@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import InputPanel from "./InputPanel";
+import DiagnosisCard from "./DiagnosisCard";
+import CaffeineConverter from "./CaffeineConverter";
 import { computeChronoTwin, SEVERITY_LABEL, type ChronoTwinInputs } from "@/lib/chronoTwinModel";
 
 // Three.js/WebGL 컴포넌트는 서버 렌더링에서 제외 (window 필요)
@@ -89,7 +91,16 @@ export default function SleepAnalyzer() {
         <StatChip label="LED 저녁 부하" value={result.ledLoad.toFixed(2)} sub={`멜라놉틱 ${result.melanopicLux.toFixed(0)}lux`} />
       </div>
 
-      <div className="mt-10">
+      <div className="mt-8 grid md:grid-cols-2 gap-6">
+        <DiagnosisCard phaseDelayMin={result.phaseDelayMin} />
+        <CaffeineConverter
+          doseMg={inputs.caffeineMg}
+          hoursElapsed={inputs.hoursSinceCaffeine}
+          residueMg={result.caffeineResidueMg}
+        />
+      </div>
+
+      <div className="mt-8">
         <WorldJetlagMap phaseDelayMin={result.phaseDelayMin} />
       </div>
 
