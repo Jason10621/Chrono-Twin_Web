@@ -2,7 +2,8 @@
 <title>Chrono-Twin 파이프라인 콘솔</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/variable/pretendardvariable.min.css" />
 
 <style>
   /* ── ULIF Chrono-Twin 디자인 토큰 (수면위상 시뮬레이터와 동일 계열) ── */
@@ -29,13 +30,15 @@
     --fail:  #f4757a;
 
     --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
-    --sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --sans: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --display: 'Space Grotesk', 'Pretendard Variable', 'Pretendard', sans-serif;
+    --serif: 'Nanum Myeongjo', serif;
     --r: 12px;
     --r-sm: 8px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { font-size: 15px; background: var(--bg); color-scheme: dark; }
+  html { font-size: 15px; background: var(--bg); color-scheme: dark; scroll-behavior: smooth; }
   body {
     background:
       radial-gradient(1100px 620px at 88% -8%, rgba(79,163,224,0.10), transparent 60%),
@@ -60,13 +63,14 @@
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
     text-transform: uppercase; color: var(--teal); margin-bottom: 9px;
   }
-  h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+  h1 { font-family: var(--display); font-size: 25px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
   h1 b { color: var(--blue); font-weight: 700; }
   .sub { color: var(--ink-2); font-size: 13.5px; margin-top: 6px; max-width: 60ch; }
   .runmeta {
     font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
-    text-align: right; line-height: 1.85; white-space: nowrap;
+    text-align: right; line-height: 1.85;
   }
+  @media (max-width: 640px) { .runmeta { text-align: left; } }
   .runmeta b { color: var(--ink); font-weight: 500; }
   .pill {
     display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono);
@@ -107,6 +111,22 @@
     font-size: 12px; color: var(--ink);
   }
   .rail .verdict .mono { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); display: block; margin-top: 4px; }
+
+  /* ── LEFT RAIL: 목차(TOC) — 8개 섹션으로 바로 점프 ── */
+  .toc { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .toc h2 {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 10px;
+  }
+  .toc a {
+    display: flex; align-items: baseline; gap: 8px; padding: 5px 6px; border-radius: 6px;
+    font-size: 12.5px; color: var(--ink-2); text-decoration: none; transition: background .15s, color .15s;
+  }
+  .toc a:hover, .toc a:focus-visible { background: rgba(255,255,255,0.05); color: var(--ink); }
+  .toc a.active { background: rgba(45,212,191,0.08); color: var(--ink); }
+  .toc a.active .n { color: var(--teal); }
+  .toc a .n { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+  .toc a.top { margin-top: 6px; color: var(--teal); font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; }
 
   /* ── SECTIONS ── */
   section { margin-bottom: 34px; scroll-margin-top: 20px; }
@@ -191,6 +211,7 @@
   .mini .stat { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
 
   footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-3); font-family: var(--mono); line-height: 1.9; }
+  footer .credit { font-family: var(--serif); font-size: 15px; letter-spacing: 0.18em; color: var(--ink-2); margin-top: 14px; }
 
   @media (prefers-reduced-motion: no-preference) {
     .bar-track .fill { transition: width .6s cubic-bezier(.16,1,.3,1); }
@@ -198,7 +219,7 @@
 </style>
 
 <div class="wrap">
-  <header class="top">
+  <header class="top" id="top">
     <div>
       <div class="eyebrow">ULIF · 정보학 파트 · 데이터 파이프라인</div>
       <h1>Chrono-Twin <b>파이프라인 콘솔</b></h1>
@@ -215,6 +236,19 @@
       <h2>파이프라인 단계</h2>
       <div id="stages"></div>
       <div class="verdict" id="railVerdict"></div>
+
+      <nav class="toc" aria-label="섹션 바로가기">
+        <h2>이 페이지의 구성</h2>
+        <a href="#overview"><span class="n">01</span> 실행 개요</a>
+        <a href="#etl"><span class="n">02</span> ETL · 데이터 정제</a>
+        <a href="#schema"><span class="n">03</span> 수집 스키마</a>
+        <a href="#corr"><span class="n">04</span> 상관분석</a>
+        <a href="#regression"><span class="n">05</span> 다중선형회귀</a>
+        <a href="#led"><span class="n">06</span> LED 조명 환경</a>
+        <a href="#msfsc"><span class="n">07</span> MSFsc</a>
+        <a href="#dist"><span class="n">08</span> 변수 분포 · 카페인</a>
+        <a href="#top" class="top">↑ 맨 위로</a>
+      </nav>
     </aside>
 
     <main>
@@ -765,6 +799,27 @@
   $("#footer").innerHTML =
     `ULIF 다학제 융합 연구 · 정보학 파트(이정욱) — Chrono-Twin 데이터 파이프라인 v0.2.0<br />` +
     `생성: <code>python -m pipeline.export_dashboard</code> · 렌더: 순수 SVG (외부 차트 라이브러리 없음) · ` +
-    `모든 수치는 더미(합성) 데이터 · 실측 데이터 수집 후 동일 파이프라인으로 자동 갱신`;
+    `모든 수치는 더미(합성) 데이터 · 실측 데이터 수집 후 동일 파이프라인으로 자동 갱신` +
+    `<div class="credit">이정욱 · 윤지후 · 홍서준 · 유가빈 · 전윤서</div>`;
+
+  /* ── TOC 활성 상태: 스크롤 중인 섹션에 맞춰 좌측 목차 하이라이트 ── */
+  (() => {
+    const links = Array.from(document.querySelectorAll(".toc a[href^='#']:not(.top)"));
+    const map = new Map(links.map((a) => [a.getAttribute("href").slice(1), a]));
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const a = map.get(entry.target.id);
+          if (!a) return;
+          if (entry.isIntersecting) {
+            links.forEach((l) => l.classList.remove("active"));
+            a.classList.add("active");
+          }
+        });
+      },
+      { rootMargin: "-15% 0px -70% 0px" }
+    );
+    map.forEach((_, id) => { const sec = document.getElementById(id); if (sec) io.observe(sec); });
+  })();
 })();
 </script>
