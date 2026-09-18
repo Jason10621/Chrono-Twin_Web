@@ -12,6 +12,8 @@ import {
 import { matchJetlagCity } from "@/lib/jetlagCities";
 
 export const runtime = "nodejs";
+// Gemini가 혼잡할 때 응답이 수십 초까지 걸리는 경우를 관찰해 여유를 둠(Vercel 기본 제한 대비).
+export const maxDuration = 60;
 
 interface ChatMessage {
   role: "user" | "assistant";

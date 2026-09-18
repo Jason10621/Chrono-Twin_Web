@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ChronoTwinInputs } from "@/lib/chronoTwinModel";
+
+const REQUEST_TIMEOUT_MS = 45_000;
+const LONG_WAIT_MS = 7_000;
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -25,7 +28,9 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [longWait, setLongWait] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const longWaitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -34,12 +39,19 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
     setMessages(next);
     setInput("");
     setLoading(true);
+    setLongWait(false);
     setNotice(null);
+
+    longWaitTimer.current = setTimeout(() => setLongWait(true), LONG_WAIT_MS);
+    const controller = new AbortController();
+    const abortTimer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     try {
       const res = await fetch("/api/chrono-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inputs, messages: next }),
+        signal: controller.signal,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -48,15 +60,22 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
             "Chrono-AI는 아직 API 키가 연결되지 않았어요. .env.local에 GEMINI_API_KEY 또는 ANTHROPIC_API_KEY를 추가하고 Vercel 프로젝트 환경변수에도 등록하면 바로 응답할 수 있어요."
           );
         } else {
-          setNotice("일시적으로 응답을 가져오지 못했어요. 잠시 후 다시 시도해주세요.");
+          setNotice("지금 AI 모델 쪽이 혼잡한 것 같아요. 잠시 후 다시 시도해주세요.");
         }
         return;
       }
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
-    } catch {
-      setNotice("네트워크 오류로 응답을 받지 못했어요.");
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setNotice(`${REQUEST_TIMEOUT_MS / 1000}초가 지나도 응답이 오지 않아 요청을 중단했어요. 잠시 후 다시 시도해주세요.`);
+      } else {
+        setNotice("네트워크 오류로 응답을 받지 못했어요.");
+      }
     } finally {
+      if (longWaitTimer.current) clearTimeout(longWaitTimer.current);
+      clearTimeout(abortTimer);
       setLoading(false);
+      setLongWait(false);
     }
   }
 
@@ -100,7 +119,9 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-xl px-3.5 py-2.5 text-sm bg-white/8 text-white/40 font-mono">생각하는 중…</div>
+              <div className="rounded-xl px-3.5 py-2.5 text-sm bg-white/8 text-white/40 font-mono">
+                {longWait ? "AI 모델 응답이 평소보다 걸리고 있어요, 조금만 더 기다려주세요…" : "생각하는 중…"}
+              </div>
             </div>
           )}
         </div>
