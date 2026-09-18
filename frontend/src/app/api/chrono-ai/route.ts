@@ -12,7 +12,6 @@ import {
 import { matchJetlagCity } from "@/lib/jetlagCities";
 
 export const runtime = "nodejs";
-// Gemini가 혼잡할 때 응답이 수십 초까지 걸리는 경우를 관찰해 여유를 둠(Vercel 기본 제한 대비).
 export const maxDuration = 60;
 
 interface ChatMessage {
@@ -55,57 +54,54 @@ ${breakdownText}
 - 체감 가상 시차: 서울 기준 「${city.city}」와 약 ${virtualHours.toFixed(1)}시간 시차`;
 }
 
-async function callGemini(system: string, messages: ChatMessage[]): Promise<string> {
+/**
+ * Gemini 단일 모델 호출 — perCallTimeoutMs 안에 응답이 없으면 스스로 포기하고
+ * AbortError를 던진다. 2026-09-19 진단: gemini-3.6-flash 가 아예 무응답으로
+ * 멈추는 현상을 확인함(HTTP 연결 자체가 안 끊기고 걸려있음) — 이 타임아웃이
+ * 없으면 상위 모델이 죽어있을 때 전체 요청이 끝없이 대기하게 된다.
+ */
+async function callGeminiModel(
+  system: string,
+  messages: ChatMessage[],
+  model: string,
+  perCallTimeoutMs: number
+): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("no_gemini_key");
-  const model = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: messages.map((m) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }],
-        })),
-        generationConfig: { temperature: 0.6, maxOutputTokens: 1024 },
-      }),
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), perCallTimeoutMs);
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: messages.map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          })),
+          generationConfig: { temperature: 0.6, maxOutputTokens: 1024 },
+        }),
+        signal: controller.signal,
+      }
+    );
+    if (!res.ok) throw new Error(`gemini_${model}_http_${res.status}`);
+    const data = await res.json();
+    const text = (data?.candidates?.[0]?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("");
+    if (!text) throw new Error(`gemini_${model}_empty`);
+    return text;
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new Error(`gemini_${model}_timeout_${perCallTimeoutMs}ms`);
     }
-  );
-  if (!res.ok) throw new Error(`gemini_http_${res.status}`);
-  const data = await res.json();
-  const text = (data?.candidates?.[0]?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("");
-  if (!text) throw new Error("gemini_empty");
-  return text;
-}
-
-async function callClaude(system: string, messages: ChatMessage[]): Promise<string> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error("no_claude_key");
-  const model = process.env.CLAUDE_MODEL || "claude-sonnet-5";
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 1024,
-      system,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    }),
-  });
-  if (!res.ok) throw new Error(`claude_http_${res.status}`);
-  const data = await res.json();
-  const text = (data?.content ?? []).map((c: { text?: string }) => c.text ?? "").join("");
-  if (!text) throw new Error("claude_empty");
-  return text;
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -121,12 +117,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  const hasGemini = !!process.env.GEMINI_API_KEY;
-  const hasClaude = !!process.env.ANTHROPIC_API_KEY;
-
-  if (!hasGemini && !hasClaude) {
+  if (!process.env.GEMINI_API_KEY) {
     return NextResponse.json(
-      { error: "no_provider_configured", detail: "GEMINI_API_KEY 또는 ANTHROPIC_API_KEY가 설정되지 않았습니다." },
+      { error: "no_provider_configured", detail: "GEMINI_API_KEY가 설정되지 않았습니다." },
       { status: 503 }
     );
   }
@@ -134,23 +127,25 @@ export async function POST(req: NextRequest) {
   const system = buildSystemPrompt(inputs);
   const trimmed = messages.slice(-12);
 
-  const preferred = process.env.AI_PROVIDER;
-  let order: ("gemini" | "claude")[];
-  if (preferred === "gemini") order = ["gemini", "claude"];
-  else if (preferred === "claude") order = ["claude", "gemini"];
-  else order = hasClaude ? ["claude", "gemini"] : ["gemini", "claude"];
+  // 1차: 품질 우선 모델(짧은 타임아웃으로 시도) → 2차: 항상 빠르게 응답하는 lite 모델.
+  // 2026-09-19 실측: gemini-3.6-flash는 무응답으로 멈추는 경우가 있었고,
+  // gemini-3.5-flash-lite는 실제 시스템 프롬프트 기준 매번 2초 내로 정확히 응답함.
+  const primaryModel = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+  const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite";
+
+  const attempts: { model: string; timeoutMs: number }[] =
+    primaryModel === fallbackModel
+      ? [{ model: primaryModel, timeoutMs: 20_000 }]
+      : [
+          { model: primaryModel, timeoutMs: 10_000 },
+          { model: fallbackModel, timeoutMs: 20_000 },
+        ];
 
   const errors: string[] = [];
-  for (const provider of order) {
+  for (const attempt of attempts) {
     try {
-      if (provider === "gemini" && hasGemini) {
-        const text = await callGemini(system, trimmed);
-        return NextResponse.json({ reply: text, provider: "gemini" });
-      }
-      if (provider === "claude" && hasClaude) {
-        const text = await callClaude(system, trimmed);
-        return NextResponse.json({ reply: text, provider: "claude" });
-      }
+      const text = await callGeminiModel(system, trimmed, attempt.model, attempt.timeoutMs);
+      return NextResponse.json({ reply: text, model: attempt.model });
     } catch (e) {
       errors.push(e instanceof Error ? e.message : String(e));
     }

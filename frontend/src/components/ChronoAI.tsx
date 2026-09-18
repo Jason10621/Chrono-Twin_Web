@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import type { ChronoTwinInputs } from "@/lib/chronoTwinModel";
 
-const REQUEST_TIMEOUT_MS = 45_000;
+// 서버가 모델별로 자체 타임아웃(1차 10초 + 2차 20초)을 두므로 넉넉히 35초로 설정.
+const REQUEST_TIMEOUT_MS = 35_000;
 const LONG_WAIT_MS = 7_000;
 
 interface ChatMsg {
@@ -21,8 +22,8 @@ const SUGGESTIONS = [
 /**
  * "Chrono-AI" — 사용자가 방금 입력한 오늘의 습관(inputs)을 그대로 서버로 보내면,
  * 서버가 chronoTwinModel의 동일한 계산식으로 직접 재계산한 뒤 그 수치를 근거로
- * Gemini 또는 Claude API가 답하는 개인화 코치. 클라이언트는 표시만 담당하고
- * 실제 계산·프롬프트 구성은 /api/chrono-ai 에서 일관되게 처리한다(수치 조작 방지).
+ * Gemini가 답하는 개인화 코치. 클라이언트는 표시만 담당하고 실제 계산·프롬프트
+ * 구성은 /api/chrono-ai 에서 일관되게 처리한다(수치 조작 방지).
  */
 export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -57,7 +58,7 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
       if (!res.ok) {
         if (data?.error === "no_provider_configured") {
           setNotice(
-            "Chrono-AI는 아직 API 키가 연결되지 않았어요. .env.local에 GEMINI_API_KEY 또는 ANTHROPIC_API_KEY를 추가하고 Vercel 프로젝트 환경변수에도 등록하면 바로 응답할 수 있어요."
+            "Chrono-AI는 아직 API 키가 연결되지 않았어요. .env.local에 GEMINI_API_KEY를 추가하고 Vercel 프로젝트 환경변수에도 등록하면 바로 응답할 수 있어요."
           );
         } else {
           setNotice("지금 AI 모델 쪽이 혼잡한 것 같아요. 잠시 후 다시 시도해주세요.");
