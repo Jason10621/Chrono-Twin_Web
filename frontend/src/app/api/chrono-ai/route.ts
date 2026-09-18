@@ -43,6 +43,8 @@ function buildSystemPrompt(inputs: ChronoTwinInputs): string {
 아래 제공되는, 사용자가 방금 입력한 오늘의 습관을 바탕으로 서버가 실제로 계산한 수치만을 근거로 답하세요.
 의학적 진단이나 처방은 하지 말고 생활 습관 코칭 관점에서 이야기하세요. 답변은 한국어로, 3~6문장 내외로
 친근하지만 근거 있게, 과장 없이 작성하세요. 질문과 관련 없는 수치까지 모두 나열하지 마세요.
+마크다운 서식(**, #, -, \`\` 등)을 절대 쓰지 말고 순수 텍스트 문장으로만 답하세요. 답변은 반드시
+완결된 문장으로 끝내세요(문장 중간에 끊지 마세요).
 
 [오늘 이 사용자의 Chrono-Twin 계산 결과]
 - 추정 수면 위상 지연: ${result.phaseDelayMin.toFixed(0)}분 (${SEVERITY_LABEL[result.severity]} · ${diag.title})
@@ -55,10 +57,23 @@ ${breakdownText}
 }
 
 /**
+ * 2026-09-19 실측: gemini-3.6-flash 는 Gemini 3.x 계열답게 maxOutputTokens 를
+ * "생각(thinking)"과 공유한다 — thinkingBudget을 0으로 끄지 않으면 응답이 무응답
+ * 상태로 멈추거나(전체 예산을 thinking이 다 써버림) 문장 중간에 잘려서 나온다.
+ * "-lite" 모델은 thinkingConfig 필드 자체를 보내면 400(INVALID_ARGUMENT)을
+ * 반환하므로 모델별로 다르게 구성해야 한다.
+ */
+function generationConfigFor(model: string) {
+  const base = { temperature: 0.6, maxOutputTokens: 2048 };
+  if (model.includes("lite")) return base;
+  return { ...base, thinkingConfig: { thinkingBudget: 0 } };
+}
+
+/**
  * Gemini 단일 모델 호출 — perCallTimeoutMs 안에 응답이 없으면 스스로 포기하고
- * AbortError를 던진다. 2026-09-19 진단: gemini-3.6-flash 가 아예 무응답으로
- * 멈추는 현상을 확인함(HTTP 연결 자체가 안 끊기고 걸려있음) — 이 타임아웃이
- * 없으면 상위 모델이 죽어있을 때 전체 요청이 끝없이 대기하게 된다.
+ * AbortError를 던진다. 무료 티어는 모델별로 하루 요청 한도(예: 20회/일)가 있어
+ * 한도를 넘기면 HTTP 429(RESOURCE_EXHAUSTED)를 반환한다 — 모델마다 한도가
+ * 별도라서, 1차 모델이 소진돼도 2차(lite) 모델은 보통 계속 쓸 수 있다.
  */
 async function callGeminiModel(
   system: string,
@@ -84,7 +99,7 @@ async function callGeminiModel(
             role: m.role === "assistant" ? "model" : "user",
             parts: [{ text: m.content }],
           })),
-          generationConfig: { temperature: 0.6, maxOutputTokens: 1024 },
+          generationConfig: generationConfigFor(model),
         }),
         signal: controller.signal,
       }
@@ -127,9 +142,9 @@ export async function POST(req: NextRequest) {
   const system = buildSystemPrompt(inputs);
   const trimmed = messages.slice(-12);
 
-  // 1차: 품질 우선 모델(짧은 타임아웃으로 시도) → 2차: 항상 빠르게 응답하는 lite 모델.
-  // 2026-09-19 실측: gemini-3.6-flash는 무응답으로 멈추는 경우가 있었고,
-  // gemini-3.5-flash-lite는 실제 시스템 프롬프트 기준 매번 2초 내로 정확히 응답함.
+  // 1차: 품질 우선 모델(thinkingBudget:0 적용 후 7~8초 내 응답) → 2차: lite 모델
+  // (매번 1~3초 내 응답, thinkingConfig 미지원). 무료 티어는 모델별 일일 한도가
+  // 따로 있어, 1차 모델 한도가 소진돼도(429) 2차로 자연스럽게 넘어간다.
   const primaryModel = process.env.GEMINI_MODEL || "gemini-3.6-flash";
   const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite";
 
