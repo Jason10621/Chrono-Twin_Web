@@ -257,3 +257,76 @@ export function caffeineSafeHoursNeeded(doseMg: number): number {
   if (doseMg <= CAFFEINE_SAFE_THRESHOLD_MG) return 0;
   return CAFFEINE_HALF_LIFE_H * Math.log2(doseMg / CAFFEINE_SAFE_THRESHOLD_MG);
 }
+
+/* ════════════════════════════════════════════════════════════════
+ * 4주차 확장 — "왜 이렇게 보이는지" 설명 가능성 + 개인화 Chrono-AI
+ * ════════════════════════════════════════════════════════════════ */
+
+// ── 위상 지연 원인 분해: GROUND_TRUTH 각 항을 그대로 분리 (선형모형이라 합산=원값) ──
+export interface PhaseDelayBreakdownItem {
+  key: "bluelight" | "caffeine" | "sleepDebt" | "ledLoad" | "exercise";
+  label: string;
+  contributionMin: number;
+  color: string;
+}
+
+export function phaseDelayBreakdown(
+  inputs: ChronoTwinInputs,
+  result: ChronoTwinResult
+): PhaseDelayBreakdownItem[] {
+  return [
+    {
+      key: "bluelight",
+      label: "스마트폰 블루라이트",
+      contributionMin: GROUND_TRUTH.betaBluelightAdj * result.bluelightAdjMin,
+      color: "#4fa3e0",
+    },
+    {
+      key: "caffeine",
+      label: "취침 시 잔존 카페인",
+      contributionMin: GROUND_TRUTH.betaCaffeineResidue * result.caffeineResidueMg,
+      color: "#f59e0b",
+    },
+    {
+      key: "sleepDebt",
+      label: "5일 누적 수면부채",
+      contributionMin: GROUND_TRUTH.betaSleepDebt * result.sleepDebtMin,
+      color: "#a78bfa",
+    },
+    {
+      key: "ledLoad",
+      label: "취침 전 실내 LED",
+      contributionMin: GROUND_TRUTH.gammaLedLoad * result.ledLoad,
+      color: "#2dd4bf",
+    },
+    {
+      key: "exercise",
+      label: "오늘의 운동",
+      contributionMin: GROUND_TRUTH.gammaExercise * (inputs.exercisedToday ? 1 : 0),
+      color: "#6ee7b7",
+    },
+  ];
+}
+
+// ── 유가빈 "잠의 의미": 위상 지연이 90분 수면 주기를 몇 개나 잘라내는지 ──
+const SLEEP_CYCLE_MIN = 90;
+
+export interface SleepCycleImpact {
+  baselineCycles: number;
+  actualCycles: number;
+  cyclesLost: number;
+  effectiveSleepMin: number;
+}
+
+export function sleepCycleImpact(phaseDelayMin: number, avgRecentSleepHours: number): SleepCycleImpact {
+  const baselineMin = Math.max(0, avgRecentSleepHours * 60);
+  const effectiveSleepMin = Math.max(0, baselineMin - Math.max(0, phaseDelayMin));
+  const baselineCycles = Math.floor(baselineMin / SLEEP_CYCLE_MIN);
+  const actualCycles = Math.floor(effectiveSleepMin / SLEEP_CYCLE_MIN);
+  return {
+    baselineCycles,
+    actualCycles,
+    cyclesLost: Math.max(0, baselineCycles - actualCycles),
+    effectiveSleepMin,
+  };
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { generateWorldDots } from "@/lib/worldDots";
 import { SEOUL, matchJetlagCity } from "@/lib/jetlagCities";
 
@@ -28,6 +28,16 @@ export default function WorldJetlagMap({ phaseDelayMin }: { phaseDelayMin: numbe
   const seoulPt = project(SEOUL.lat, SEOUL.lon);
   const cityPt = project(city.lat, city.lon);
   const isSeoul = city.city === "서울";
+
+  // 실측 데이터: 두 도시의 실제 현재 시각을 IANA 타임존으로 계산(외부 API 불필요, 항상 정확)
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const timeIn = (tz: string) =>
+    now ? new Intl.DateTimeFormat("ko-KR", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(now) : "--:--";
 
   return (
     <div className="glass-panel rounded-2xl p-5 md:p-7 relative overflow-hidden">
@@ -116,6 +126,11 @@ export default function WorldJetlagMap({ phaseDelayMin }: { phaseDelayMin: numbe
             ? "오늘 입력한 습관대로라면 생체 시계와 실제 생활 사이에 시차가 거의 없습니다."
             : `당신의 어젯밤 수면 패턴은 서울과 약 ${virtualHours.toFixed(1)}시간 시차가 나는 「${city.city}」에서 살다 온 것과 같습니다. ${city.blurb}`}
         </p>
+      </div>
+
+      <div className="mt-3 text-[11px] text-white/35 font-mono">
+        지금 서울 {timeIn(SEOUL.timezone)}
+        {!isSeoul && <> · {city.city} {timeIn(city.timezone)} (실시간, IANA 타임존 기준)</>}
       </div>
 
       <p className="mt-4 text-[11px] text-white/30 leading-relaxed border-t border-white/10 pt-3">

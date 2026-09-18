@@ -5,6 +5,9 @@ import dynamic from "next/dynamic";
 import InputPanel from "./InputPanel";
 import DiagnosisCard from "./DiagnosisCard";
 import CaffeineConverter from "./CaffeineConverter";
+import PhaseBreakdown from "./PhaseBreakdown";
+import SleepMeaning from "./SleepMeaning";
+import ChronoAI from "./ChronoAI";
 import { computeChronoTwin, SEVERITY_LABEL, type ChronoTwinInputs } from "@/lib/chronoTwinModel";
 
 // Three.js/WebGL 컴포넌트는 서버 렌더링에서 제외 (window 필요)
@@ -60,7 +63,7 @@ export default function SleepAnalyzer() {
   return (
     <section id="analyze" className="w-full max-w-6xl mx-auto px-4 py-16 md:py-24 scroll-mt-20">
       <div className="text-center mb-10 md:mb-14">
-        <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-3">
+        <h2 className="font-display text-2xl md:text-4xl font-extrabold tracking-tight mb-3">
           당신의 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Chrono-Twin</span>을 만나보세요
         </h2>
         <p className="text-white/50 max-w-xl mx-auto text-sm md:text-base">
@@ -84,6 +87,14 @@ export default function SleepAnalyzer() {
         </div>
       </div>
 
+      <div className="mt-8">
+        <PhaseBreakdown inputs={inputs} result={result} />
+      </div>
+
+      <div className="mt-8">
+        <ChronoAI inputs={inputs} />
+      </div>
+
       <div className="flex flex-wrap gap-3 mt-8">
         <StatChip label="블루라이트 보정" value={`${result.bluelightAdjMin.toFixed(0)}분`} sub="X₁ · 노출×밝기 가중" />
         <StatChip label="취침 시 카페인 잔류" value={`${result.caffeineResidueMg.toFixed(0)}mg`} sub="X₂ · 반감기 5.5h 역산" />
@@ -98,6 +109,10 @@ export default function SleepAnalyzer() {
           hoursElapsed={inputs.hoursSinceCaffeine}
           residueMg={result.caffeineResidueMg}
         />
+      </div>
+
+      <div className="mt-8">
+        <SleepMeaning phaseDelayMin={result.phaseDelayMin} avgRecentSleepHours={inputs.avgRecentSleepHours} />
       </div>
 
       <div className="mt-8">

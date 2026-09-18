@@ -10,6 +10,14 @@ const config: Config = {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        // 본문: Pretendard(CDN, 한국어) — Latin 문자만 있는 부분은 자동으로
+        // display(Space Grotesk)로 폴백되어 "Chrono-Twin" 같은 브랜드 단어가 도드라진다.
+        sans: ["Pretendard Variable", "Pretendard", "var(--font-display)", "-apple-system", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Pretendard Variable", "Pretendard", "sans-serif"],
+        serif: ["var(--font-serif)", "Nanum Myeongjo", "serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

@@ -14,7 +14,7 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
 
         <div className="z-10 text-center animate-slide-up max-w-3xl">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+          <h1 className="font-display text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
             Discover Your <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
               Digital Chrono-Twin
