@@ -35,5 +35,5 @@ python dashboard/build.py
 
 ## 디자인
 
-EURIF 수면위상 시뮬레이터와 동일 계열 — 다크 콘솔, IBM Plex Mono + Noto Sans KR,
+ULIF 수면위상 시뮬레이터와 동일 계열 — 다크 콘솔, IBM Plex Mono + Noto Sans KR,
 teal/blue/amber 액센트. 계기판 성격이라 단일(다크) 테마로 커밋.

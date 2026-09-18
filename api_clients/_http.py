@@ -17,7 +17,7 @@ from typing import Any, Optional
 
 import requests
 
-DEFAULT_UA = "EURIF-ChronoTwin/0.2 (high-school research; contact: eurif.team@example.org)"
+DEFAULT_UA = "ULIF-ChronoTwin/0.2 (high-school research; contact: ulif.team@example.org)"
 DEFAULT_TIMEOUT = 15.0
 
 

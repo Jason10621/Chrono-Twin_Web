@@ -67,7 +67,7 @@ export default function RootLayout({
             이정욱 · 윤지후 · 홍서준 · 유가빈 · 전윤서
           </p>
           <p className="mt-2 text-[11px] font-mono uppercase tracking-widest text-white/25">
-            EURIF — Chrono-Twin Research Team
+            ULIF — Chrono-Twin Research Team
           </p>
         </footer>
       </body>

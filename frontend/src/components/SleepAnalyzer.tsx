@@ -120,7 +120,7 @@ export default function SleepAnalyzer() {
       </div>
 
       <p className="mt-6 text-[11px] text-white/25 text-center max-w-2xl mx-auto leading-relaxed">
-        이 데모의 계수는 더미(합성) 데이터로 자체검증한 EURIF 정보학 파트의 간이 추정 모형입니다. 실측 데이터 수집이
+        이 데모의 계수는 더미(합성) 데이터로 자체검증한 ULIF 정보학 파트의 간이 추정 모형입니다. 실측 데이터 수집이
         끝나면 <code className="text-white/40">pipeline/regression.py</code>가 산출한 실제 회귀계수로 자동 교체될
         예정입니다.
       </p>
