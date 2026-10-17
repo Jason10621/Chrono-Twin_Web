@@ -344,7 +344,10 @@ export interface WhatIfAction {
  * 같은 모형으로 "이 한 가지만 바꾸면 위상 지연이 몇 분 줄어드나"를 다시 계산한다.
  * 가장 효과가 큰 순서로 최대 4개 + 전부 실천했을 때의 예상 지연.
  */
-export function whatIfActions(inputs: ChronoTwinInputs): {
+export function whatIfActions(
+  inputs: ChronoTwinInputs,
+  limit = 4
+): {
   actions: WhatIfAction[];
   allSavedMin: number;
   afterMin: number;
@@ -409,5 +412,5 @@ export function whatIfActions(inputs: ChronoTwinInputs): {
   const all = candidates.filter((c) => c.applicable).reduce((acc, c) => c.apply(acc), inputs);
   const afterMin = computeChronoTwin(all).phaseDelayMin;
 
-  return { actions: actions.slice(0, 4), allSavedMin: base - afterMin, afterMin };
+  return { actions: actions.slice(0, limit), allSavedMin: base - afterMin, afterMin };
 }

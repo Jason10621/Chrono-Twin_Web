@@ -6,6 +6,7 @@ import {
   sleepCycleImpact,
   caffeineFamiliarUnits,
   caffeineSafeHoursNeeded,
+  whatIfActions,
   type ChronoTwinInputs,
 } from "@/lib/chronoTwinModel";
 import { matchJetlagCity } from "@/lib/jetlagCities";
@@ -38,12 +39,31 @@ function buildSystemPrompt(inputs: ChronoTwinInputs): string {
   const unitLabel = (key: string) => (key === "coffee" ? "잔" : key === "energy" ? "캔" : "개");
   const unitsText = units.map((u) => `${u.label} ${u.count.toFixed(1)}${unitLabel(u.key)}`).join(", ");
 
+  const { actions, allSavedMin, afterMin } = whatIfActions(inputs, 5);
+  const actionsText =
+    actions.length > 0
+      ? actions.map((a) => `  · ${a.label}(${a.detail}): 위상 지연 약 ${Math.round(a.savedMin)}분 감소`).join("\n") +
+        `\n  · 전부 실천하면 ${result.phaseDelayMin.toFixed(0)}분 → ${afterMin.toFixed(0)}분 (약 ${Math.round(allSavedMin)}분 감소)`
+      : "  · 더 줄일 만한 요인이 거의 없음(지금 습관 유지)";
+
   return `당신은 ULIF 동아리가 만든 청소년 수면 위상 연구 플랫폼 "Chrono-Twin"의 AI 코치 "Chrono-AI"입니다.
 아래 제공되는, 사용자가 방금 입력한 오늘의 습관을 바탕으로 서버가 실제로 계산한 수치만을 근거로 답하세요.
 의학적 진단이나 처방은 하지 말고 생활 습관 코칭 관점에서 이야기하세요. 답변은 한국어로, 3~6문장 내외로
-친근하지만 근거 있게, 과장 없이 작성하세요. 질문과 관련 없는 수치까지 모두 나열하지 마세요.
+친근하지만 근거 있게, 과장 없이 작성하세요.
+질문이 가리키는 주제(카페인·조명·스마트폰·수면 시간·운동 등)에 해당하는 수치를 먼저 쓰고, 질문과 관련 없는
+수치는 나열하지 마세요. "어떻게 바꿔야 해?" 같은 행동 질문에는 아래 [바꿨을 때의 효과]의 수치를 근거로
+구체적인 행동 한두 가지를 권하세요. 아래에 없는 수치는 지어내지 마세요.
 마크다운 서식(**, #, -, \`\` 등)을 절대 쓰지 말고 순수 텍스트 문장으로만 답하세요. 답변은 반드시
 완결된 문장으로 끝내세요(문장 중간에 끊지 마세요).
+
+[사용자가 입력한 오늘의 습관]
+- 스마트폰: 자기 전 2시간 동안 ${Math.round(inputs.bluelightMin)}분 사용, 화면 밝기 ${Math.round(inputs.screenBrightness * 100)}%
+- 카페인: 오후 6시 이후 ${Math.round(inputs.caffeineMg)}mg, 마신 뒤 ${inputs.hoursSinceCaffeine}시간 지나 취침
+- 방 조명: ${Math.round(inputs.ledLux)}lux, 색온도 ${Math.round(inputs.ledColorTempK)}K(2700K=전구색, 4000K=주백색, 6500K=주광색)
+- 최근 5일 평균 수면 ${inputs.avgRecentSleepHours}시간, 오늘 운동 ${inputs.exercisedToday ? "함" : "안 함"}
+
+[바꿨을 때의 효과 — 같은 계산식으로 다시 계산한 값]
+${actionsText}
 
 [오늘 이 사용자의 Chrono-Twin 계산 결과]
 - 추정 수면 위상 지연: ${result.phaseDelayMin.toFixed(0)}분 (${diag.title})
