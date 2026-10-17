@@ -1,5 +1,8 @@
 import type { Config } from "tailwindcss";
 
+// 색은 모두 globals.css 의 CSS 변수(라이트/다크 전환) 에서 온다.
+const rgb = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,47 +14,56 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        // 본문: Pretendard(CDN, 한국어) — Latin 문자만 있는 부분은 자동으로
-        // display(Space Grotesk)로 폴백되어 "Chrono-Twin" 같은 브랜드 단어가 도드라진다.
-        sans: ["Pretendard Variable", "Pretendard", "var(--font-display)", "-apple-system", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "Pretendard Variable", "Pretendard", "sans-serif"],
-        serif: ["var(--font-serif)", "Nanum Myeongjo", "serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+        // 애플 한국 사이트와 같은 계열: 애플 기기에선 SF Pro + Apple SD Gothic Neo,
+        // 그 외 기기에선 SF와 가장 닮은 Pretendard 로 대체.
+        sans: [
+          '"SF Pro KR"',
+          '"SF Pro Display"',
+          '"SF Pro Text"',
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Apple SD Gothic Neo"',
+          '"Pretendard Variable"',
+          "Pretendard",
+          '"Segoe UI"',
+          '"Malgun Gothic"',
+          "sans-serif",
+        ],
+        mono: ["ui-monospace", '"SF Mono"', "SFMono-Regular", "Menlo", "monospace"],
       },
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
+        bg: rgb("bg"),
+        surface: rgb("surface"),
+        "surface-2": rgb("surface-2"),
+        fg: rgb("fg"),
+        "fg-2": rgb("fg-2"),
+        "fg-3": rgb("fg-3"),
+        line: rgb("line"),
+        accent: rgb("accent"),
+        "sys-blue": rgb("sys-blue"),
+        "sys-green": rgb("sys-green"),
+        "sys-orange": rgb("sys-orange"),
+        "sys-red": rgb("sys-red"),
+        "sys-purple": rgb("sys-purple"),
+        "sys-teal": rgb("sys-teal"),
+        "tx-blue": "var(--t-blue)",
+        "tx-green": "var(--t-green)",
+        "tx-orange": "var(--t-orange)",
+        "tx-red": "var(--t-red)",
+        "tx-purple": "var(--t-purple)",
+        "tx-teal": "var(--t-teal)",
       },
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-      },
-      animation: {
-        "fade-in": "fadeIn 0.5s ease-out forwards",
-        "slide-up": "slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+      borderRadius: {
+        card: "28px",
       },
       keyframes: {
-        fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
-        slideUp: {
-          "0%": { transform: "translateY(20px)", opacity: "0" },
+        fadeUp: {
+          "0%": { transform: "translateY(16px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+      },
+      animation: {
+        "fade-up": "fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both",
       },
     },
   },

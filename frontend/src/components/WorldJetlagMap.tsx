@@ -21,6 +21,36 @@ function arcPath(x1: number, y1: number, x2: number, y2: number) {
   return `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
 }
 
+/** 지도 위 이름표는 SVG 글자가 아니라 HTML — 화면이 작아져도 항상 읽히는 크기를 유지한다. */
+function Pin({ x, y, text, below, tone }: { x: number; y: number; text: string; below?: boolean; tone: string }) {
+  return (
+    <span
+      className="pointer-events-none absolute whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-[15px] font-semibold shadow-[0_1px_6px_rgb(0_0_0/0.18)] backdrop-blur"
+      style={{
+        left: `${(x / W) * 100}%`,
+        top: `${(y / H) * 100}%`,
+        transform: `translate(-50%, ${below ? "50%" : "-150%"})`,
+        color: tone,
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
+function Clock({ label, time }: { label: string; time: string }) {
+  return (
+    <div className="tile flex-1 text-center">
+      <p className="text-[16px] font-medium text-fg-2">{label}</p>
+      <p className="mt-1 text-[clamp(32px,5vw,44px)] font-semibold leading-none tracking-tight tabular-nums">{time}</p>
+    </div>
+  );
+}
+
+/**
+ * 윤지후(정책)의 "사회적 시차" — 위상 지연을 실제 도시의 시차로 비유한 지도.
+ * 두 도시의 현재 시각은 IANA 타임존으로 계산한 실제 값이다.
+ */
 export default function WorldJetlagMap({ phaseDelayMin }: { phaseDelayMin: number }) {
   const dots = useMemo(() => generateWorldDots(), []);
   const { city, virtualHours } = useMemo(() => matchJetlagCity(phaseDelayMin), [phaseDelayMin]);
@@ -29,7 +59,6 @@ export default function WorldJetlagMap({ phaseDelayMin }: { phaseDelayMin: numbe
   const cityPt = project(city.lat, city.lon);
   const isSeoul = city.city === "서울";
 
-  // 실측 데이터: 두 도시의 실제 현재 시각을 IANA 타임존으로 계산(외부 API 불필요, 항상 정확)
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());
@@ -40,104 +69,69 @@ export default function WorldJetlagMap({ phaseDelayMin }: { phaseDelayMin: numbe
     now ? new Intl.DateTimeFormat("ko-KR", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(now) : "--:--";
 
   return (
-    <div className="glass-panel rounded-2xl p-5 md:p-7 relative overflow-hidden">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
-        <h3 className="text-sm font-mono tracking-widest text-accent uppercase">Social Jetlag Map</h3>
-        <span className="text-xs text-white/40 font-mono">가상 시차 ≈ {virtualHours.toFixed(1)}h</span>
+    <div className="card">
+      <div className="relative">
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full select-none" role="img" aria-label="세계 시차 지도">
+          <defs>
+            <radialGradient id="jl-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" style={{ stopColor: "rgb(var(--sys-blue))" }} stopOpacity="0.8" />
+              <stop offset="100%" style={{ stopColor: "rgb(var(--sys-blue))" }} stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="jl-glow-warn" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" style={{ stopColor: "rgb(var(--sys-red))" }} stopOpacity="0.85" />
+              <stop offset="100%" style={{ stopColor: "rgb(var(--sys-red))" }} stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          {dots.map(([lat, lon], i) => {
+            const { x, y } = project(lat, lon);
+            return <circle key={i} cx={x} cy={y} r={1.6} className="fill-fg/25" />;
+          })}
+
+          {!isSeoul && (
+            <path
+              d={arcPath(seoulPt.x, seoulPt.y, cityPt.x, cityPt.y)}
+              fill="none"
+              className="jetlag-arc stroke-sys-orange"
+              strokeWidth={3}
+              strokeDasharray="8 8"
+              strokeLinecap="round"
+            />
+          )}
+
+          <circle cx={seoulPt.x} cy={seoulPt.y} r={18} fill="url(#jl-glow)" />
+          <circle cx={seoulPt.x} cy={seoulPt.y} r={6} className="fill-sys-blue stroke-surface" strokeWidth={2.5} />
+
+          {!isSeoul && (
+            <>
+              <circle cx={cityPt.x} cy={cityPt.y} r={20} fill="url(#jl-glow-warn)" className="jetlag-pulse" />
+              <circle cx={cityPt.x} cy={cityPt.y} r={7} className="fill-sys-red stroke-surface" strokeWidth={2.5} />
+            </>
+          )}
+        </svg>
+
+        <Pin x={seoulPt.x} y={seoulPt.y} text="서울" below tone="var(--t-blue)" />
+        {!isSeoul && <Pin x={cityPt.x} y={cityPt.y} text={city.city} tone="var(--t-red)" />}
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto select-none" role="img" aria-label="세계 시차 지도">
-        <defs>
-          <radialGradient id="jl-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#4fa3e0" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#4fa3e0" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="jl-glow-warn" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#f87171" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#f87171" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        {/* 위경도 그리드 (레이더 느낌) */}
-        {Array.from({ length: 7 }, (_, i) => {
-          const lat = LAT_MIN + (i * (LAT_MAX - LAT_MIN)) / 6;
-          const y = project(lat, 0).y;
-          return <line key={`g-lat-${i}`} x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />;
-        })}
-        {Array.from({ length: 9 }, (_, i) => {
-          const lon = LON_MIN + (i * (LON_MAX - LON_MIN)) / 8;
-          const x = project(0, lon).x;
-          return <line key={`g-lon-${i}`} x1={x} y1={0} x2={x} y2={H} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />;
-        })}
-
-        {/* 대륙 점묘 */}
-        {dots.map(([lat, lon], i) => {
-          const { x, y } = project(lat, lon);
-          return <circle key={i} cx={x} cy={y} r={1.35} fill="rgba(148,163,184,0.55)" />;
-        })}
-
-        {/* 비행 항로 아크 */}
-        {!isSeoul && (
-          <path
-            d={arcPath(seoulPt.x, seoulPt.y, cityPt.x, cityPt.y)}
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth={2}
-            strokeDasharray="6 6"
-            className="jetlag-arc"
-          />
-        )}
-
-        {/* 서울 마커 */}
-        <circle cx={seoulPt.x} cy={seoulPt.y} r={16} fill="url(#jl-glow)" />
-        <circle cx={seoulPt.x} cy={seoulPt.y} r={4} fill="#4fa3e0" stroke="#0b0c10" strokeWidth={1.5} />
-        <text x={seoulPt.x} y={seoulPt.y - 12} textAnchor="middle" fontSize={12} fill="#cfe4f7" fontFamily="ui-monospace, monospace">
-          서울 (기준)
-        </text>
-
-        {/* 목적지 마커 */}
-        {!isSeoul && (
-          <>
-            <circle cx={cityPt.x} cy={cityPt.y} r={20} fill="url(#jl-glow-warn)" className="jetlag-pulse" />
-            <circle cx={cityPt.x} cy={cityPt.y} r={5} fill="#f87171" stroke="#0b0c10" strokeWidth={1.5} />
-            <text x={cityPt.x} y={cityPt.y - 14} textAnchor="middle" fontSize={13} fontWeight={700} fill="#ffd9d9" fontFamily="ui-monospace, monospace">
-              {city.city}
-            </text>
-          </>
-        )}
-      </svg>
-
-      <div className="mt-5 flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-        <div>
-          <div className="text-xs text-white/40 font-mono uppercase tracking-wide mb-1">오늘의 체감 시차</div>
-          <div className="text-2xl md:text-3xl font-extrabold">
-            {isSeoul ? (
-              <span className="text-accent">시차 없음</span>
-            ) : (
-              <>
-                <span className="text-red-300">{city.city}</span>
-                <span className="text-white/50 text-base font-medium">, {city.country}</span>
-              </>
-            )}
-          </div>
-        </div>
-        <p className="text-sm text-white/60 leading-relaxed flex-1">
+      <div className="mt-10 text-center">
+        <p className="text-[17px] font-medium text-fg-2">오늘 내 몸의 시간</p>
+        <p className="mt-2 text-[clamp(36px,6vw,64px)] font-semibold leading-tight tracking-[-0.03em]">
+          {isSeoul ? "서울 그대로예요" : `${city.city} 시간이에요`}
+        </p>
+        <p className="t-lead mx-auto mt-3 max-w-2xl">
           {isSeoul
-            ? "오늘 입력한 습관대로라면 생체 시계와 실제 생활 사이에 시차가 거의 없습니다."
-            : `당신의 어젯밤 수면 패턴은 서울과 약 ${virtualHours.toFixed(1)}시간 시차가 나는 「${city.city}」에서 살다 온 것과 같습니다. ${city.blurb}`}
+            ? "생체 시계와 생활이 잘 맞아요."
+            : `서울보다 약 ${virtualHours.toFixed(1)}시간 느려요. ${city.blurb}`}
         </p>
       </div>
 
-      <div className="mt-3 text-[11px] text-white/35 font-mono">
-        지금 서울 {timeIn(SEOUL.timezone)}
-        {!isSeoul && <> · {city.city} {timeIn(city.timezone)} (실시간, IANA 타임존 기준)</>}
+      <div className="mt-8 flex gap-3">
+        <Clock label="지금 서울" time={timeIn(SEOUL.timezone)} />
+        {!isSeoul && <Clock label={`지금 ${city.city}`} time={timeIn(city.timezone)} />}
       </div>
 
-      <p className="mt-4 text-[11px] text-white/30 leading-relaxed border-t border-white/10 pt-3">
-        ※ 이 지도는 "매일 아침 해외여행을 다녀오듯 시차 부적응을 겪는다"는 사회적 시차증(Social Jetlag) 개념을
-        체감할 수 있도록 만든 발표용 은유이며, 실제 표준시 차이를 과학적으로 계산한 것이 아닙니다.
-        (기준: 위상 지연 추정치 × 발표용 배율)
-      </p>
+      <p className="mt-6 text-center text-[14px] text-fg-2">발표용 비유예요. 실제 시차 계산은 아니에요.</p>
     </div>
   );
 }

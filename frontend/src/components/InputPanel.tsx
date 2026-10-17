@@ -1,11 +1,15 @@
 "use client";
 
+import type { ReactNode } from "react";
+import { Coffee, Lightbulb, MoonStar, Smartphone, type LucideIcon } from "lucide-react";
 import type { ChronoTwinInputs } from "@/lib/chronoTwinModel";
 
 interface Props {
   inputs: ChronoTwinInputs;
   onChange: (next: ChronoTwinInputs) => void;
 }
+
+const fmt = (v: number) => String(parseFloat(v.toFixed(2)));
 
 function Slider({
   label,
@@ -15,7 +19,8 @@ function Slider({
   max,
   step,
   onChange,
-  accent,
+  color,
+  hint,
 }: {
   label: string;
   unit: string;
@@ -24,14 +29,17 @@ function Slider({
   max: number;
   step: number;
   onChange: (v: number) => void;
-  accent?: string;
+  color: string;
+  hint?: string;
 }) {
+  const pct = ((value - min) / (max - min)) * 100;
   return (
-    <div className="mb-4">
-      <div className="flex justify-between items-baseline mb-1.5">
-        <label className="text-xs text-white/60">{label}</label>
-        <span className="text-xs font-mono" style={{ color: accent || "#fff" }}>
-          {Number.isInteger(value) ? value : value.toFixed(1)} {unit}
+    <div className="mt-6">
+      <div className="mb-3 flex items-baseline justify-between gap-4">
+        <label className="text-[17px] text-fg">{label}</label>
+        <span className="text-[19px] font-semibold tabular-nums" style={{ color: `var(--t-${color})` }}>
+          {fmt(value)}
+          <span className="ml-1 text-[15px] font-medium text-fg-2">{unit}</span>
         </span>
       </div>
       <input
@@ -41,70 +49,151 @@ function Slider({
         max={max}
         step={step}
         value={value}
+        aria-label={label}
         onChange={(e) => onChange(parseFloat(e.target.value))}
+        style={{ ["--pct" as string]: `${pct}%`, ["--sc" as string]: `rgb(var(--sys-${color}))` }}
       />
+      {hint && <p className="mt-2 text-[15px] text-fg-2">{hint}</p>}
     </div>
   );
 }
 
-const CCT_PRESETS: { label: string; k: number }[] = [
-  { label: "전구색 2700K", k: 2700 },
-  { label: "주백색 4000K", k: 4000 },
-  { label: "주광색 6500K", k: 6500 },
+function Group({
+  icon: Icon,
+  color,
+  title,
+  children,
+}: {
+  icon: LucideIcon;
+  color: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="py-8 first:pt-0 last:pb-0">
+      <div className="flex items-center gap-3">
+        <span
+          className="flex h-11 w-11 items-center justify-center rounded-[14px]"
+          style={{ background: `rgb(var(--sys-${color}) / 0.14)`, color: `var(--t-${color})` }}
+        >
+          <Icon className="h-6 w-6" strokeWidth={1.9} />
+        </span>
+        <h3 className="text-[24px] font-semibold tracking-tight">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const LIGHT_PRESETS: { label: string; k: number }[] = [
+  { label: "전구색", k: 2700 },
+  { label: "주백색", k: 4000 },
+  { label: "주광색", k: 6500 },
 ];
 
 export default function InputPanel({ inputs, onChange }: Props) {
-  const set = <K extends keyof ChronoTwinInputs>(k: K, v: ChronoTwinInputs[K]) =>
-    onChange({ ...inputs, [k]: v });
+  const set = <K extends keyof ChronoTwinInputs>(k: K, v: ChronoTwinInputs[K]) => onChange({ ...inputs, [k]: v });
 
   return (
-    <div className="glass-panel rounded-2xl p-5 md:p-6">
-      <h3 className="text-sm font-mono tracking-widest text-primary uppercase mb-5">오늘 밤의 습관 입력</h3>
+    <div className="card">
+      <h3 className="t-card-title mb-8">오늘 밤의 습관</h3>
 
-      <div className="mb-5">
-        <div className="text-[11px] uppercase tracking-wide text-white/35 mb-2 font-mono">📱 스마트폰</div>
-        <Slider label="취침 전 2시간 내 사용 시간" unit="분" min={0} max={180} step={5}
-          value={inputs.bluelightMin} onChange={(v) => set("bluelightMin", v)} accent="#4fa3e0" />
-        <Slider label="화면 밝기" unit="%" min={0} max={100} step={5}
+      <div className="divide-y divide-line/10">
+      <Group icon={Smartphone} color="blue" title="스마트폰">
+        <Slider
+          label="자기 전 2시간 동안 사용"
+          unit="분"
+          min={0}
+          max={180}
+          step={5}
+          value={inputs.bluelightMin}
+          onChange={(v) => set("bluelightMin", v)}
+          color="blue"
+        />
+        <Slider
+          label="화면 밝기"
+          unit="%"
+          min={0}
+          max={100}
+          step={5}
           value={Math.round(inputs.screenBrightness * 100)}
-          onChange={(v) => set("screenBrightness", v / 100)} accent="#4fa3e0" />
-      </div>
+          onChange={(v) => set("screenBrightness", v / 100)}
+          color="blue"
+        />
+      </Group>
 
-      <div className="mb-5">
-        <div className="text-[11px] uppercase tracking-wide text-white/35 mb-2 font-mono">☕ 카페인 (오후 6시 이후)</div>
-        <Slider label="총 섭취량" unit="mg" min={0} max={400} step={10}
-          value={inputs.caffeineMg} onChange={(v) => set("caffeineMg", v)} accent="#f59e0b" />
-        <Slider label="섭취 후 ~ 취침까지 경과 시간" unit="h" min={0} max={10} step={0.5}
-          value={inputs.hoursSinceCaffeine} onChange={(v) => set("hoursSinceCaffeine", v)} accent="#f59e0b" />
-      </div>
+      <Group icon={Coffee} color="orange" title="카페인">
+        <Slider
+          label="오후 6시 이후 마신 양"
+          unit="mg"
+          min={0}
+          max={400}
+          step={10}
+          value={inputs.caffeineMg}
+          onChange={(v) => set("caffeineMg", v)}
+          color="orange"
+          hint={`아메리카노 약 ${(inputs.caffeineMg / 150).toFixed(1)}잔`}
+        />
+        <Slider
+          label="마신 뒤 잠들기까지"
+          unit="시간"
+          min={0}
+          max={10}
+          step={0.5}
+          value={inputs.hoursSinceCaffeine}
+          onChange={(v) => set("hoursSinceCaffeine", v)}
+          color="orange"
+        />
+      </Group>
 
-      <div className="mb-5">
-        <div className="text-[11px] uppercase tracking-wide text-white/35 mb-2 font-mono">💡 취침 전 실내 조명</div>
-        <Slider label="조도" unit="lux" min={0} max={500} step={10}
-          value={inputs.ledLux} onChange={(v) => set("ledLux", v)} accent="#2dd4bf" />
-        <div className="flex gap-2 mt-2">
-          {CCT_PRESETS.map((p) => (
+      <Group icon={Lightbulb} color="teal" title="방 조명">
+        <Slider
+          label="밝기"
+          unit="lux"
+          min={0}
+          max={500}
+          step={10}
+          value={inputs.ledLux}
+          onChange={(v) => set("ledLux", v)}
+          color="teal"
+        />
+        <div className="mt-5 flex flex-wrap gap-2.5">
+          {LIGHT_PRESETS.map((p) => (
             <button
               key={p.k}
+              type="button"
+              aria-pressed={inputs.ledColorTempK === p.k}
               onClick={() => set("ledColorTempK", p.k)}
-              className={`ct-toggle ${inputs.ledColorTempK === p.k ? "ct-toggle-on" : "ct-toggle-off"}`}
+              className="chip"
             >
               {p.label}
             </button>
           ))}
         </div>
-      </div>
+      </Group>
 
-      <div className="mb-2">
-        <div className="text-[11px] uppercase tracking-wide text-white/35 mb-2 font-mono">🛌 최근 컨디션</div>
-        <Slider label="최근 5일 평균 수면시간" unit="h" min={4} max={9} step={0.25}
-          value={inputs.avgRecentSleepHours} onChange={(v) => set("avgRecentSleepHours", v)} accent="#a78bfa" />
-        <button
-          onClick={() => set("exercisedToday", !inputs.exercisedToday)}
-          className={`ct-toggle mt-1 ${inputs.exercisedToday ? "ct-toggle-on" : "ct-toggle-off"}`}
-        >
-          {inputs.exercisedToday ? "✓ 오늘 30분 이상 운동함" : "오늘 운동 안 함"}
-        </button>
+      <Group icon={MoonStar} color="purple" title="최근 컨디션">
+        <Slider
+          label="최근 5일 평균 수면"
+          unit="시간"
+          min={4}
+          max={9}
+          step={0.25}
+          value={inputs.avgRecentSleepHours}
+          onChange={(v) => set("avgRecentSleepHours", v)}
+          color="purple"
+        />
+        <div className="mt-5">
+          <button
+            type="button"
+            aria-pressed={inputs.exercisedToday}
+            onClick={() => set("exercisedToday", !inputs.exercisedToday)}
+            className="chip"
+          >
+            {inputs.exercisedToday ? "✓ 오늘 운동했어요" : "오늘 운동했어요"}
+          </button>
+        </div>
+      </Group>
       </div>
     </div>
   );

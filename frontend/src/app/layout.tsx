@@ -1,29 +1,21 @@
-import type { Metadata } from "next";
-import { Space_Grotesk, Nanum_Myeongjo, IBM_Plex_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-
-// 본문 한글은 Pretendard(아래 <head> CDN)를 기본 폰트로 쓰고, 이 세 폰트는
-// 영역별 악센트로만 사용한다 — Inter 하나로 통일했던 이전 버전과의 의도적 차별점.
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-display",
-});
-const nanumMyeongjo = Nanum_Myeongjo({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-serif",
-});
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-mono",
-});
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
-  title: "Chrono-Twin | 3D Chronotype Analyzer",
-  description: "AI-driven chronotype analysis and 3D visualization platform",
+  title: "Chrono-Twin — 오늘 밤의 습관이 내일을 바꿉니다",
+  description: "스마트폰·카페인·조명이 내 수면과 내일 컨디션에 미치는 영향을 바로 확인하세요.",
 };
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f5f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
+
+// 페이지가 그려지기 전에 저장된(또는 기기 기본) 테마를 적용해 깜빡임을 막는다.
+const themeInit = `(function(){try{var t=localStorage.getItem('ct-theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var r=document.documentElement;r.classList.toggle('dark',d);r.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -31,43 +23,45 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="dark">
+    <html lang="ko" suppressHydrationWarning>
       <head>
+        {/* 애플 기기가 아닌 곳에서 SF Pro 대신 쓰는 한글 서체 (SF와 가장 닮음) */}
         <link
           rel="stylesheet"
           as="style"
           crossOrigin=""
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/variable/pretendardvariable.min.css"
         />
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body
-        className={`${spaceGrotesk.variable} ${nanumMyeongjo.variable} ${plexMono.variable} font-sans min-h-screen bg-background text-foreground`}
-      >
-        <nav className="fixed top-0 w-full z-50 glass-panel border-b border-white/10 px-6 py-4 flex items-center justify-between">
-          <div className="font-display text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-            Chrono-Twin
-          </div>
-          <div className="flex gap-4">
-            <button className="text-sm hover:text-primary transition-colors">About</button>
-            <a
-              href="/dashboard.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm hover:text-primary transition-colors"
-            >
-              Dashboard
+      <body className="min-h-screen">
+        <header className="nav-blur fixed inset-x-0 top-0 z-50">
+          <div className="mx-auto flex h-[52px] max-w-6xl items-center justify-between px-5 md:px-8">
+            <a href="#top" className="text-[19px] font-semibold tracking-tight">
+              Chrono-Twin
             </a>
+            <nav className="flex items-center gap-2 sm:gap-6">
+              <a href="#analyze" className="nav-link hidden sm:inline">
+                분석
+              </a>
+              <a href="#coach" className="nav-link hidden sm:inline">
+                AI 코치
+              </a>
+              <a href="/dashboard.html" target="_blank" rel="noopener noreferrer" className="nav-link">
+                대시보드
+              </a>
+              <ThemeToggle />
+            </nav>
           </div>
-        </nav>
-        <main className="pt-20">
-          {children}
-        </main>
-        <footer className="mt-20 border-t border-white/10 py-10 px-6 text-center">
-          <p className="font-serif text-lg md:text-xl tracking-[0.2em] text-white/70">
-            이정욱 · 윤지후 · 홍서준 · 유가빈 · 전윤서
-          </p>
-          <p className="mt-2 text-[11px] font-mono uppercase tracking-widest text-white/25">
-            ULIF — Chrono-Twin Research Team
+        </header>
+
+        <main id="top">{children}</main>
+
+        <footer className="mx-auto mt-10 max-w-6xl px-5 pb-16 pt-12 text-center md:px-8">
+          <p className="text-[19px] font-semibold tracking-[0.04em]">이정욱 · 윤지후 · 홍서준 · 유가빈 · 전윤서</p>
+          <p className="mt-2 text-[15px] text-fg-2">ULIF 연구팀</p>
+          <p className="mx-auto mt-6 max-w-xl text-[14px] leading-relaxed text-fg-2">
+            더미(합성) 데이터로 검증한 간이 추정 모형이에요. 의학적 진단이 아닙니다.
           </p>
         </footer>
       </body>

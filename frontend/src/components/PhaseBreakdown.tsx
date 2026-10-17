@@ -8,10 +8,8 @@ import {
 } from "@/lib/chronoTwinModel";
 
 /**
- * 아바타의 색·왜곡·크기는 vitality 하나에서 파생되기 때문에, 보는 사람이
- * "왜 지금 이런 모습인지"를 직관적으로 알기 어렵다는 피드백을 반영한 카드.
- * GROUND_TRUTH 의 각 항을 그대로 분리해 보여주므로, 막대를 전부 더하면
- * 위 아바타가 나타내는 위상 지연 추정치와 정확히 일치한다(가짜 설명이 아님).
+ * 아바타의 색·모양이 왜 그렇게 보이는지: 다섯 요인을 회귀계수(β·γ) 그대로 분리해 보여준다.
+ * 선형 모형이라 막대를 전부 더하면 위의 위상 지연 값과 정확히 같다.
  */
 export default function PhaseBreakdown({
   inputs,
@@ -22,49 +20,47 @@ export default function PhaseBreakdown({
 }) {
   const rows = phaseDelayBreakdown(inputs, result);
   const maxAbs = Math.max(10, ...rows.map((r) => Math.abs(r.contributionMin)));
+  const total = result.phaseDelayMin;
 
   return (
-    <div className="glass-panel rounded-2xl p-5 md:p-6">
-      <div className="flex items-center justify-between mb-1.5">
-        <h3 className="text-sm font-mono tracking-widest text-primary uppercase">아바타는 왜 이렇게 보일까요?</h3>
-        <span className="text-[10px] font-mono text-white/30 uppercase">계수 × 오늘 입력값</span>
+    <div className="card">
+      <div className="flex items-baseline justify-between gap-4 border-b border-line/10 pb-6">
+        <h3 className="t-card-title">전부 더하면</h3>
+        <p className="text-[clamp(32px,5vw,48px)] font-semibold leading-none tracking-tight tabular-nums">
+          {total >= 0 ? "+" : "−"}
+          {Math.abs(total).toFixed(0)}
+          <span className="ml-1 text-[22px] font-medium text-fg-2">분</span>
+        </p>
       </div>
-      <p className="text-xs text-white/40 mb-4 leading-relaxed">
-        아래 다섯 항목을 더하면 위상 지연 추정치{" "}
-        <b className="text-white/60">
-          {result.phaseDelayMin >= 0 ? "+" : ""}
-          {result.phaseDelayMin.toFixed(0)}분
-        </b>
-        과 정확히 같아요. 아바타의 색상·일그러짐·크기는 이 숫자 하나(vitality)에서 그대로 파생됩니다.
-      </p>
-      <div className="space-y-2.5">
+      <div className="mt-2 divide-y divide-line/10">
         {rows.map((row) => (
-          <BreakdownRow key={row.key} row={row} maxAbs={maxAbs} />
+          <Row key={row.key} row={row} maxAbs={maxAbs} />
         ))}
       </div>
     </div>
   );
 }
 
-function BreakdownRow({ row, maxAbs }: { row: PhaseDelayBreakdownItem; maxAbs: number }) {
+function Row({ row, maxAbs }: { row: PhaseDelayBreakdownItem; maxAbs: number }) {
   const pct = (Math.abs(row.contributionMin) / maxAbs) * 50;
   const positive = row.contributionMin >= 0;
   return (
-    <div>
-      <div className="flex justify-between items-baseline text-xs mb-1">
-        <span className="text-white/70">{row.label}</span>
-        <span className="font-mono" style={{ color: row.color }}>
+    <div className="py-5">
+      <div className="mb-3 flex items-baseline justify-between gap-4">
+        <span className="text-[19px] font-medium">{row.label}</span>
+        <span className="text-[19px] font-semibold tabular-nums">
           {positive ? "+" : "−"}
-          {Math.abs(row.contributionMin).toFixed(1)}분
+          {Math.abs(row.contributionMin).toFixed(1)}
+          <span className="ml-0.5 text-[15px] font-medium text-fg-2">분</span>
         </span>
       </div>
-      <div className="relative h-2 rounded-full bg-white/10 overflow-hidden">
-        <div className="absolute inset-y-0 left-1/2 w-px bg-white/20" />
+      <div className="relative h-3 overflow-hidden rounded-full bg-fg/[0.07]">
+        <div className="absolute inset-y-0 left-1/2 w-px bg-fg/20" />
         <div
-          className="absolute inset-y-0 rounded-full transition-all"
+          className="absolute inset-y-0 rounded-full transition-all duration-500"
           style={{
             width: `${pct}%`,
-            backgroundColor: row.color,
+            background: row.color,
             left: positive ? "50%" : `${50 - pct}%`,
           }}
         />

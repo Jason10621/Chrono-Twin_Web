@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUp } from "lucide-react";
 import type { ChronoTwinInputs } from "@/lib/chronoTwinModel";
 
 // 서버가 모델별로 자체 타임아웃(1차 10초 + 2차 20초)을 두므로 넉넉히 35초로 설정.
@@ -13,17 +14,15 @@ interface ChatMsg {
 }
 
 const SUGGESTIONS = [
-  "오늘 카페인 섭취, 지금 상태로 괜찮은 편이야?",
-  "내 위상 지연의 가장 큰 원인이 뭐야?",
-  "오늘 밤엔 몇 시쯤 자는 게 좋을까?",
-  "조명을 어떻게 바꾸면 가장 효과적일까?",
+  "오늘 카페인 괜찮을까?",
+  "가장 큰 원인이 뭐야?",
+  "오늘 몇 시에 자는 게 좋아?",
+  "조명은 어떻게 바꿔야 해?",
 ];
 
 /**
- * "Chrono-AI" — 사용자가 방금 입력한 오늘의 습관(inputs)을 그대로 서버로 보내면,
- * 서버가 chronoTwinModel의 동일한 계산식으로 직접 재계산한 뒤 그 수치를 근거로
- * Gemini가 답하는 개인화 코치. 클라이언트는 표시만 담당하고 실제 계산·프롬프트
- * 구성은 /api/chrono-ai 에서 일관되게 처리한다(수치 조작 방지).
+ * "Chrono-AI" — 방금 입력한 습관(inputs)을 서버로 보내면 서버가 같은 계산식으로 직접
+ * 재계산한 뒤 그 수치를 근거로 Gemini 가 답한다. 클라이언트는 표시만 담당(수치 조작 방지).
  */
 export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -32,6 +31,11 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
   const [longWait, setLongWait] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const longWaitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, loading]);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -57,18 +61,16 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
       const data = await res.json();
       if (!res.ok) {
         if (data?.error === "no_provider_configured") {
-          setNotice(
-            "Chrono-AI는 아직 API 키가 연결되지 않았어요. .env.local에 GEMINI_API_KEY를 추가하고 Vercel 프로젝트 환경변수에도 등록하면 바로 응답할 수 있어요."
-          );
+          setNotice("AI 코치가 아직 연결되지 않았어요. GEMINI_API_KEY를 등록하면 바로 쓸 수 있어요.");
         } else {
-          setNotice("지금 AI 모델 쪽이 혼잡한 것 같아요. 잠시 후 다시 시도해주세요.");
+          setNotice("지금 AI 쪽이 혼잡해요. 잠시 후 다시 시도해주세요.");
         }
         return;
       }
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
-        setNotice(`${REQUEST_TIMEOUT_MS / 1000}초가 지나도 응답이 오지 않아 요청을 중단했어요. 잠시 후 다시 시도해주세요.`);
+        setNotice("응답이 너무 늦어 요청을 멈췄어요. 잠시 후 다시 시도해주세요.");
       } else {
         setNotice("네트워크 오류로 응답을 받지 못했어요.");
       }
@@ -81,37 +83,22 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
   }
 
   return (
-    <div className="glass-panel rounded-2xl p-5 md:p-6 flex flex-col">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-mono tracking-widest text-primary uppercase">Chrono-AI 코치</h3>
-        <span className="text-[10px] font-mono text-white/30 uppercase">개인화 · 실시간 계산 연동</span>
-      </div>
-      <p className="text-xs text-white/40 mb-4 leading-relaxed">
-        지금 입력한 오늘의 습관을 그대로 근거로 삼아 답해요 — 일반적인 수면 상식이 아니라
-        「당신의」 Chrono-Twin 계산 결과에 대한 답변입니다.
-      </p>
-
-      {messages.length === 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
+    <div className="card mx-auto max-w-3xl">
+      {messages.length === 0 ? (
+        <div className="flex flex-wrap justify-center gap-2.5 pb-2">
           {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              onClick={() => send(s)}
-              className="text-xs px-3 py-1.5 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-primary/50 transition-colors"
-            >
+            <button key={s} type="button" onClick={() => send(s)} className="chip">
               {s}
             </button>
           ))}
         </div>
-      )}
-
-      {messages.length > 0 && (
-        <div className="flex-1 space-y-3 mb-4 max-h-[360px] overflow-y-auto pr-1">
+      ) : (
+        <div ref={scrollRef} className="max-h-[440px] space-y-3 overflow-y-auto pb-2 pr-1">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                  m.role === "user" ? "bg-primary/25 text-white" : "bg-white/8 text-white/80"
+                className={`max-w-[88%] whitespace-pre-wrap rounded-[24px] px-5 py-3.5 text-[18px] leading-[1.55] ${
+                  m.role === "user" ? "bg-accent text-white" : "bg-surface-2 text-fg"
                 }`}
               >
                 {m.content}
@@ -120,37 +107,37 @@ export default function ChronoAI({ inputs }: { inputs: ChronoTwinInputs }) {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-xl px-3.5 py-2.5 text-sm bg-white/8 text-white/40 font-mono">
-                {longWait ? "AI 모델 응답이 평소보다 걸리고 있어요, 조금만 더 기다려주세요…" : "생각하는 중…"}
+              <div className="rounded-[24px] bg-surface-2 px-5 py-3.5 text-[17px] text-fg-2">
+                {longWait ? "조금 더 걸리고 있어요. 잠시만요…" : "생각하는 중…"}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {notice && (
-        <p className="text-[11px] text-amber-300/80 mb-3 leading-relaxed border-t border-white/10 pt-2.5">{notice}</p>
-      )}
+      {notice && <p className="mt-4 text-center text-[16px] text-tx-orange">{notice}</p>}
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
           send(input);
         }}
-        className="flex gap-2"
+        className="mt-6 flex items-center gap-2 rounded-full bg-surface-2 p-1.5 pl-6"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Chrono-Twin에 대해 무엇이든 물어보세요"
-          className="flex-1 bg-black/20 border border-white/10 rounded-full px-4 py-2.5 text-sm outline-none focus:border-primary/50 transition-colors"
+          placeholder="내 수면에 대해 물어보세요"
+          aria-label="Chrono-AI에게 질문하기"
+          className="min-w-0 flex-1 bg-transparent py-3 text-[18px] text-fg outline-none placeholder:text-fg-3"
         />
         <button
           type="submit"
-          disabled={loading}
-          className="px-4 py-2.5 rounded-full bg-white text-black text-sm font-semibold disabled:opacity-40"
+          disabled={loading || !input.trim()}
+          aria-label="보내기"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-white transition disabled:opacity-35"
         >
-          전송
+          <ArrowUp className="h-6 w-6" strokeWidth={2.4} />
         </button>
       </form>
     </div>

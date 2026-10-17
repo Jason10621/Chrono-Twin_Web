@@ -6,7 +6,6 @@ import {
   sleepCycleImpact,
   caffeineFamiliarUnits,
   caffeineSafeHoursNeeded,
-  SEVERITY_LABEL,
   type ChronoTwinInputs,
 } from "@/lib/chronoTwinModel";
 import { matchJetlagCity } from "@/lib/jetlagCities";
@@ -47,7 +46,7 @@ function buildSystemPrompt(inputs: ChronoTwinInputs): string {
 완결된 문장으로 끝내세요(문장 중간에 끊지 마세요).
 
 [오늘 이 사용자의 Chrono-Twin 계산 결과]
-- 추정 수면 위상 지연: ${result.phaseDelayMin.toFixed(0)}분 (${SEVERITY_LABEL[result.severity]} · ${diag.title})
+- 추정 수면 위상 지연: ${result.phaseDelayMin.toFixed(0)}분 (${diag.title})
 - 지연 원인 분해(전부 더하면 위 지연치와 정확히 일치):
 ${breakdownText}
 - 취침 시 잔존 카페인: ${result.caffeineResidueMg.toFixed(0)}mg (${unitsText || "거의 없음"} 분량) · 안전 수준(50mg)까지 총 ${safeHours.toFixed(1)}시간 필요

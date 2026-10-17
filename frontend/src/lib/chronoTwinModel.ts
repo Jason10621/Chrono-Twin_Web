@@ -99,7 +99,6 @@ export interface ChronoTwinResult {
   melanopicLux: number;
   phaseDelayMin: number; // 추정 위상 지연(분)
   vitality: number; // 0~1, 아바타 상태
-  severity: "great" | "good" | "moderate" | "poor" | "severe";
 }
 
 export function computeChronoTwin(inputs: ChronoTwinInputs): ChronoTwinResult {
@@ -120,13 +119,6 @@ export function computeChronoTwin(inputs: ChronoTwinInputs): ChronoTwinResult {
   // 0분(완벽) ~ 180분(심각) 을 vitality 1→0 으로. 음수(위상 전진)는 보너스로 1 이상 클립.
   const vitality = clamp(1 - phaseDelayMin / 180, 0, 1);
 
-  let severity: ChronoTwinResult["severity"];
-  if (phaseDelayMin < 10) severity = "great";
-  else if (phaseDelayMin < 40) severity = "good";
-  else if (phaseDelayMin < 80) severity = "moderate";
-  else if (phaseDelayMin < 130) severity = "poor";
-  else severity = "severe";
-
   return {
     bluelightAdjMin,
     caffeineResidueMg,
@@ -135,7 +127,6 @@ export function computeChronoTwin(inputs: ChronoTwinInputs): ChronoTwinResult {
     melanopicLux: mLux,
     phaseDelayMin,
     vitality,
-    severity,
   };
 }
 
@@ -155,14 +146,6 @@ export function vitalityColor(vitality: number): string {
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * clamp(t, 0, 1);
 }
-
-export const SEVERITY_LABEL: Record<ChronoTwinResult["severity"], string> = {
-  great: "매우 양호",
-  good: "양호",
-  moderate: "주의",
-  poor: "경고",
-  severe: "심각",
-};
 
 /* ════════════════════════════════════════════════════════════════
  * 3주차 "웹사이트 적용 방안" — 팀원 제안 기반 확장
@@ -184,37 +167,45 @@ export function diagnosePhaseDelay(phaseDelayMin: number): PhaseDiagnosis {
   if (phaseDelayMin < 0) {
     return {
       level: "advanced",
-      title: "위상 앞당겨짐",
-      detail: "생체 시계가 오히려 계획보다 일찍 준비된 상태예요. 지금 습관을 유지해도 좋습니다.",
+      title: "생체 시계가 앞서 있어요",
+      detail: "계획보다 일찍 졸린 상태예요. 지금 습관을 유지하세요.",
     };
   }
   if (phaseDelayMin <= 50) {
     return {
       level: "normal",
-      title: "정상 범위",
-      detail: "생체 시계와 오늘 습관 사이의 차이가 크지 않아요.",
+      title: "정상 범위예요",
+      detail: "생체 시계와 오늘 습관의 차이가 크지 않아요.",
     };
   }
   if (phaseDelayMin <= 120) {
     return {
       level: "moderate",
-      title: "중등도 수면 위상 지연",
-      detail: "이 정도 지연이 반복되면 다음날 집중력·작업기억이 눈에 띄게 떨어질 수 있어요.",
+      title: "수면 시계가 많이 늦어졌어요",
+      detail: "이런 날이 반복되면 내일 집중력과 기억력이 눈에 띄게 떨어질 수 있어요.",
     };
   }
   return {
     level: "severe",
-    title: "심각한 수면 위상 지연",
-    detail:
-      "전전두엽(판단·집중을 담당하는 뇌 영역) 기능 저하와 편도체 과활성화로 인한 감정 불안정 위험이 있는 수준이에요.",
+    title: "수면 시계가 크게 밀렸어요",
+    detail: "판단·집중을 맡은 뇌 영역이 둔해지고 감정이 불안정해질 위험이 있어요.",
   };
 }
 
+// 라이트/다크 모드에서 모두 읽히는 텍스트용 색 (globals.css 의 --t-* 토큰)
 export const PHASE_DIAGNOSIS_TONE: Record<PhaseDiagnosisLevel, string> = {
-  advanced: "#6ee7b7",
-  normal: "#4fa3e0",
-  moderate: "#f59e0b",
-  severe: "#f87171",
+  advanced: "var(--t-green)",
+  normal: "var(--t-blue)",
+  moderate: "var(--t-orange)",
+  severe: "var(--t-red)",
+};
+
+// 결과 카드의 짧은 상태 이름 — 아래 진단 제목과 같은 4단계라 서로 어긋나지 않는다.
+export const PHASE_DIAGNOSIS_LABEL: Record<PhaseDiagnosisLevel, string> = {
+  advanced: "여유 있음",
+  normal: "정상",
+  moderate: "주의",
+  severe: "위험",
 };
 
 // ── 유가빈: 수면 단계별 비대칭 손실 (N3 −0.08·분, REM −0.12·분, 지연 1분당) ──
@@ -277,33 +268,33 @@ export function phaseDelayBreakdown(
   return [
     {
       key: "bluelight",
-      label: "스마트폰 블루라이트",
+      label: "스마트폰 빛",
       contributionMin: GROUND_TRUTH.betaBluelightAdj * result.bluelightAdjMin,
-      color: "#4fa3e0",
+      color: "rgb(var(--sys-blue))",
     },
     {
       key: "caffeine",
-      label: "취침 시 잔존 카페인",
+      label: "남은 카페인",
       contributionMin: GROUND_TRUTH.betaCaffeineResidue * result.caffeineResidueMg,
-      color: "#f59e0b",
+      color: "rgb(var(--sys-orange))",
     },
     {
       key: "sleepDebt",
-      label: "5일 누적 수면부채",
+      label: "쌓인 수면 부족",
       contributionMin: GROUND_TRUTH.betaSleepDebt * result.sleepDebtMin,
-      color: "#a78bfa",
+      color: "rgb(var(--sys-purple))",
     },
     {
       key: "ledLoad",
-      label: "취침 전 실내 LED",
+      label: "방 조명",
       contributionMin: GROUND_TRUTH.gammaLedLoad * result.ledLoad,
-      color: "#2dd4bf",
+      color: "rgb(var(--sys-teal))",
     },
     {
       key: "exercise",
-      label: "오늘의 운동",
+      label: "오늘 운동",
       contributionMin: GROUND_TRUTH.gammaExercise * (inputs.exercisedToday ? 1 : 0),
-      color: "#6ee7b7",
+      color: "rgb(var(--sys-green))",
     },
   ];
 }
@@ -329,4 +320,94 @@ export function sleepCycleImpact(phaseDelayMin: number, avgRecentSleepHours: num
     cyclesLost: Math.max(0, baselineCycles - actualCycles),
     effectiveSleepMin,
   };
+}
+
+/* ════════════════════════════════════════════════════════════════
+ * 5주차 — 쉬운 설명: "그래서 나는 어떻게 되고, 뭘 바꾸면 되나"
+ * ════════════════════════════════════════════════════════════════ */
+
+/** 위상 지연(분)을 한 문장으로 — 숫자의 의미를 바로 알 수 있게. */
+export function delaySentence(phaseDelayMin: number): string {
+  const m = Math.round(Math.abs(phaseDelayMin));
+  if (m < 5) return "평소와 거의 같은 시각에 잠들어요";
+  return phaseDelayMin > 0 ? `평소보다 ${m}분 늦게 잠들어요` : `평소보다 ${m}분 일찍 잠들어요`;
+}
+
+export interface WhatIfAction {
+  key: "phone" | "caffeine" | "light" | "sleep" | "exercise";
+  label: string;
+  detail: string;
+  savedMin: number;
+}
+
+/**
+ * 같은 모형으로 "이 한 가지만 바꾸면 위상 지연이 몇 분 줄어드나"를 다시 계산한다.
+ * 가장 효과가 큰 순서로 최대 4개 + 전부 실천했을 때의 예상 지연.
+ */
+export function whatIfActions(inputs: ChronoTwinInputs): {
+  actions: WhatIfAction[];
+  allSavedMin: number;
+  afterMin: number;
+} {
+  const base = computeChronoTwin(inputs).phaseDelayMin;
+
+  const candidates: {
+    key: WhatIfAction["key"];
+    label: string;
+    detail: string;
+    applicable: boolean;
+    apply: (i: ChronoTwinInputs) => ChronoTwinInputs;
+  }[] = [
+    {
+      key: "caffeine",
+      label: "오후 6시 이후 카페인 끊기",
+      detail: `지금 ${Math.round(inputs.caffeineMg)}mg`,
+      applicable: inputs.caffeineMg > 0,
+      apply: (i) => ({ ...i, caffeineMg: 0 }),
+    },
+    {
+      key: "phone",
+      label: "자기 전 스마트폰 끄기",
+      detail: `지금 ${Math.round(inputs.bluelightMin)}분 사용`,
+      applicable: inputs.bluelightMin > 0,
+      apply: (i) => ({ ...i, bluelightMin: 0 }),
+    },
+    {
+      key: "sleep",
+      label: "하루 30분 더 자기",
+      detail: `지금 평균 ${inputs.avgRecentSleepHours.toFixed(1)}시간`,
+      applicable: inputs.avgRecentSleepHours < 9,
+      apply: (i) => ({ ...i, avgRecentSleepHours: Math.min(9, i.avgRecentSleepHours + 0.5) }),
+    },
+    {
+      key: "exercise",
+      label: "낮에 30분 운동하기",
+      detail: "오늘은 운동 안 함",
+      applicable: !inputs.exercisedToday,
+      apply: (i) => ({ ...i, exercisedToday: true }),
+    },
+    {
+      key: "light",
+      label: "전구색 · 약한 조명으로 바꾸기",
+      detail: `지금 ${Math.round(inputs.ledLux)}lux`,
+      applicable: inputs.ledColorTempK > 2700 || inputs.ledLux > 100,
+      apply: (i) => ({ ...i, ledColorTempK: 2700, ledLux: Math.min(i.ledLux, 100) }),
+    },
+  ];
+
+  const actions: WhatIfAction[] = candidates
+    .filter((c) => c.applicable)
+    .map((c) => ({
+      key: c.key,
+      label: c.label,
+      detail: c.detail,
+      savedMin: base - computeChronoTwin(c.apply(inputs)).phaseDelayMin,
+    }))
+    .filter((a) => a.savedMin >= 1)
+    .sort((a, b) => b.savedMin - a.savedMin);
+
+  const all = candidates.filter((c) => c.applicable).reduce((acc, c) => c.apply(acc), inputs);
+  const afterMin = computeChronoTwin(all).phaseDelayMin;
+
+  return { actions: actions.slice(0, 4), allSavedMin: base - afterMin, afterMin };
 }

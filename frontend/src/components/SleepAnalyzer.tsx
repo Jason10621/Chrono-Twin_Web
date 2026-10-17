@@ -1,30 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import InputPanel from "./InputPanel";
-import DiagnosisCard from "./DiagnosisCard";
-import CaffeineConverter from "./CaffeineConverter";
+import ImpactSection from "./ImpactSection";
 import PhaseBreakdown from "./PhaseBreakdown";
-import SleepMeaning from "./SleepMeaning";
+import WhatIfSection from "./WhatIfSection";
 import ChronoAI from "./ChronoAI";
-import { computeChronoTwin, SEVERITY_LABEL, type ChronoTwinInputs } from "@/lib/chronoTwinModel";
+import CaffeineConverter from "./CaffeineConverter";
+import { Section, SectionHead } from "./Section";
+import {
+  PHASE_DIAGNOSIS_LABEL,
+  PHASE_DIAGNOSIS_TONE,
+  computeChronoTwin,
+  delaySentence,
+  diagnosePhaseDelay,
+  type ChronoTwinInputs,
+  type ChronoTwinResult,
+} from "@/lib/chronoTwinModel";
 
 // Three.js/WebGL 컴포넌트는 서버 렌더링에서 제외 (window 필요)
 const ChronoTwinAvatar = dynamic(() => import("./ChronoTwinAvatar"), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-[380px] md:h-[440px] rounded-2xl glass-panel flex items-center justify-center">
-      <span className="text-white/30 text-sm font-mono tracking-widest uppercase">렌더링 엔진 로딩 중…</span>
-    </div>
-  ),
+  loading: () => <div className="avatar-stage h-[300px] w-full md:h-[340px]" />,
 });
 
-// Math.sin 기반 점 배치가 서버/클라이언트 V8 빌드 간 미세한 부동소수점 차이로
-// hydration mismatch 를 일으킬 수 있어, 지도도 클라이언트 전용으로 렌더.
+// Math.sin 기반 점 배치가 서버/클라이언트 부동소수점 차이로 hydration mismatch 를 낼 수 있어 클라이언트 전용.
 const WorldJetlagMap = dynamic(() => import("./WorldJetlagMap"), {
   ssr: false,
-  loading: () => <div className="h-[300px] rounded-2xl glass-panel" />,
+  loading: () => <div className="card h-[420px]" />,
 });
 
 const DEFAULT_INPUTS: ChronoTwinInputs = {
@@ -38,21 +42,53 @@ const DEFAULT_INPUTS: ChronoTwinInputs = {
   exercisedToday: false,
 };
 
-const SEVERITY_COLOR: Record<string, string> = {
-  great: "text-teal-300",
-  good: "text-emerald-300",
-  moderate: "text-amber-300",
-  poor: "text-orange-300",
-  severe: "text-red-300",
-};
+const signed = (m: number) => `${m >= 0 ? "+" : "−"}${Math.abs(Math.round(m))}`;
 
-function StatChip({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function ResultCard({ result }: { result: ChronoTwinResult }) {
+  const { level } = diagnosePhaseDelay(result.phaseDelayMin);
+  const tone = PHASE_DIAGNOSIS_TONE[level];
   return (
-    <div className="glass-panel rounded-xl px-4 py-3 flex-1 min-w-[140px]">
-      <div className="text-[10px] uppercase tracking-wider text-white/40 font-mono mb-1">{label}</div>
-      <div className="text-lg font-bold">{value}</div>
-      {sub && <div className="text-[11px] text-white/40 mt-0.5">{sub}</div>}
+    <div id="result" className="card overflow-hidden !p-0 text-center">
+      <ChronoTwinAvatar vitality={result.vitality} />
+      <div className="px-6 pb-10 md:px-10">
+        <span className="inline-flex items-center gap-2.5 rounded-full bg-fg/[0.07] px-4 py-1.5 text-[17px] font-semibold">
+          <i className="h-2.5 w-2.5 rounded-full" style={{ background: tone }} />
+          {PHASE_DIAGNOSIS_LABEL[level]}
+        </span>
+        <p className="t-number mt-5" style={{ color: tone }}>
+          {signed(result.phaseDelayMin)}
+          <span className="ml-1.5 text-[0.28em] font-medium tracking-normal text-fg-2">분</span>
+        </p>
+        <p className="mt-4 text-[clamp(21px,2.6vw,28px)] font-semibold tracking-tight">
+          {delaySentence(result.phaseDelayMin)}
+        </p>
+      </div>
     </div>
+  );
+}
+
+/** 모바일에서 슬라이더를 만지는 동안 결과가 화면 밖으로 사라지지 않도록 하단에 작게 띄운다. */
+function LiveBar({ visible, result }: { visible: boolean; result: ChronoTwinResult }) {
+  const { level } = diagnosePhaseDelay(result.phaseDelayMin);
+  const tone = PHASE_DIAGNOSIS_TONE[level];
+  return (
+    <a
+      href="#result"
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
+      className={`nav-blur fixed inset-x-4 bottom-4 z-40 flex items-center justify-between rounded-full px-6 py-3.5 shadow-[0_8px_30px_rgb(0_0_0/0.18)] transition duration-300 lg:hidden ${
+        visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
+      }`}
+    >
+      <span className="inline-flex items-center gap-2.5 text-[17px] font-semibold">
+        <i className="h-2.5 w-2.5 rounded-full" style={{ background: tone }} />
+        {PHASE_DIAGNOSIS_LABEL[level]}
+      </span>
+      <span className="text-[26px] font-semibold tabular-nums leading-none" style={{ color: tone }}>
+        {signed(result.phaseDelayMin)}
+        <span className="ml-0.5 text-[15px] font-medium text-fg-2">분</span>
+      </span>
+    </a>
   );
 }
 
@@ -60,70 +96,71 @@ export default function SleepAnalyzer() {
   const [inputs, setInputs] = useState<ChronoTwinInputs>(DEFAULT_INPUTS);
   const result = useMemo(() => computeChronoTwin(inputs), [inputs]);
 
-  return (
-    <section id="analyze" className="w-full max-w-6xl mx-auto px-4 py-16 md:py-24 scroll-mt-20">
-      <div className="text-center mb-10 md:mb-14">
-        <h2 className="font-display text-2xl md:text-4xl font-extrabold tracking-tight mb-3">
-          당신의 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Chrono-Twin</span>을 만나보세요
-        </h2>
-        <p className="text-white/50 max-w-xl mx-auto text-sm md:text-base">
-          왼쪽의 슬라이더를 움직이면, 파이프라인과 동일한 계산식으로 오른쪽의 디지털 트윈이 실시간으로 반응합니다.
-        </p>
-      </div>
+  const inputsRef = useRef<HTMLDivElement>(null);
+  const [inputsInView, setInputsInView] = useState(false);
+  useEffect(() => {
+    const el = inputsRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setInputsInView(e.isIntersecting), { threshold: 0.12 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
-      <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-        <InputPanel inputs={inputs} onChange={setInputs} />
-        <div className="flex flex-col gap-4">
-          <ChronoTwinAvatar vitality={result.vitality} />
-          <div className="text-center">
-            <span className={`text-sm font-mono uppercase tracking-widest ${SEVERITY_COLOR[result.severity]}`}>
-              {SEVERITY_LABEL[result.severity]}
-            </span>
-            <span className="text-white/30 text-sm ml-2">
-              · 추정 위상 지연 {result.phaseDelayMin >= 0 ? "+" : ""}
-              {result.phaseDelayMin.toFixed(0)}분
-            </span>
+  return (
+    <>
+      <Section id="analyze" className="!pt-4 md:!pt-8">
+        <SectionHead eyebrow="분석" title="오늘 밤을 알려주세요" sub="슬라이더를 움직이면 결과가 바로 바뀌어요." />
+        <div className="grid items-start gap-5 lg:grid-cols-2 lg:gap-6">
+          <div ref={inputsRef} className="order-2 lg:order-1">
+            <InputPanel inputs={inputs} onChange={setInputs} />
+          </div>
+          <div className="order-1 lg:sticky lg:top-20 lg:order-2">
+            <ResultCard result={result} />
           </div>
         </div>
-      </div>
+      </Section>
 
-      <div className="mt-8">
-        <PhaseBreakdown inputs={inputs} result={result} />
-      </div>
+      <Section id="impact">
+        <SectionHead eyebrow="내일의 나" title="내일, 이렇게 달라져요" />
+        <ImpactSection phaseDelayMin={result.phaseDelayMin} avgRecentSleepHours={inputs.avgRecentSleepHours} />
+      </Section>
 
-      <div className="mt-8">
+      <Section id="why">
+        <SectionHead eyebrow="원인" title="왜 이런 결과일까요?" sub="다섯 가지 요인이 더해진 값이에요." />
+        <div className="mx-auto max-w-3xl">
+          <PhaseBreakdown inputs={inputs} result={result} />
+        </div>
+      </Section>
+
+      <Section id="whatif">
+        <SectionHead eyebrow="해결" title="이렇게 바꿔보세요" sub="효과가 큰 순서예요." />
+        <div className="mx-auto max-w-3xl">
+          <WhatIfSection inputs={inputs} phaseDelayMin={result.phaseDelayMin} />
+        </div>
+      </Section>
+
+      <Section id="coach">
+        <SectionHead eyebrow="AI 코치" title="Chrono-AI에게 물어보세요" sub="내 결과를 알고 답해요." />
         <ChronoAI inputs={inputs} />
-      </div>
+      </Section>
 
-      <div className="flex flex-wrap gap-3 mt-8">
-        <StatChip label="블루라이트 보정" value={`${result.bluelightAdjMin.toFixed(0)}분`} sub="X₁ · 노출×밝기 가중" />
-        <StatChip label="취침 시 카페인 잔류" value={`${result.caffeineResidueMg.toFixed(0)}mg`} sub="X₂ · 반감기 5.5h 역산" />
-        <StatChip label="5일 수면부채" value={`${result.sleepDebtMin.toFixed(0)}분`} sub="X₃ · 권장 8h 기준" />
-        <StatChip label="LED 저녁 부하" value={result.ledLoad.toFixed(2)} sub={`멜라놉틱 ${result.melanopicLux.toFixed(0)}lux`} />
-      </div>
+      <Section id="caffeine">
+        <SectionHead eyebrow="카페인" title="자는 동안에도 남아 있어요" />
+        <div className="mx-auto max-w-3xl">
+          <CaffeineConverter
+            doseMg={inputs.caffeineMg}
+            hoursElapsed={inputs.hoursSinceCaffeine}
+            residueMg={result.caffeineResidueMg}
+          />
+        </div>
+      </Section>
 
-      <div className="mt-8 grid md:grid-cols-2 gap-6">
-        <DiagnosisCard phaseDelayMin={result.phaseDelayMin} />
-        <CaffeineConverter
-          doseMg={inputs.caffeineMg}
-          hoursElapsed={inputs.hoursSinceCaffeine}
-          residueMg={result.caffeineResidueMg}
-        />
-      </div>
-
-      <div className="mt-8">
-        <SleepMeaning phaseDelayMin={result.phaseDelayMin} avgRecentSleepHours={inputs.avgRecentSleepHours} />
-      </div>
-
-      <div className="mt-8">
+      <Section id="jetlag">
+        <SectionHead eyebrow="사회적 시차" title="내 몸은 지금 어느 도시일까요?" />
         <WorldJetlagMap phaseDelayMin={result.phaseDelayMin} />
-      </div>
+      </Section>
 
-      <p className="mt-6 text-[11px] text-white/25 text-center max-w-2xl mx-auto leading-relaxed">
-        이 데모의 계수는 더미(합성) 데이터로 자체검증한 ULIF 정보학 파트의 간이 추정 모형입니다. 실측 데이터 수집이
-        끝나면 <code className="text-white/40">pipeline/regression.py</code>가 산출한 실제 회귀계수로 자동 교체될
-        예정입니다.
-      </p>
-    </section>
+      <LiveBar visible={inputsInView} result={result} />
+    </>
   );
 }

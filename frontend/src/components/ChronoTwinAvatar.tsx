@@ -44,10 +44,12 @@ function Core({ vitality }: { vitality: number }) {
         color={color}
         distort={distort}
         speed={speed}
-        roughness={0.3}
-        metalness={0.15}
+        roughness={0.28}
+        metalness={0.1}
+        clearcoat={0.8}
+        clearcoatRoughness={0.15}
         emissive={color}
-        emissiveIntensity={0.12 + vitality * 0.3}
+        emissiveIntensity={0.03 + vitality * 0.08}
       />
     </Sphere>
   );
@@ -86,18 +88,17 @@ function EnergyMotes({ vitality }: { vitality: number }) {
 export default function ChronoTwinAvatar({ vitality }: { vitality: number }) {
   const v = Math.min(1, Math.max(0, vitality));
   return (
-    <div className="relative w-full h-[380px] md:h-[440px] rounded-2xl overflow-hidden glass-panel">
+    <div className="avatar-stage relative h-[300px] w-full md:h-[340px]" aria-label="내 수면 상태를 나타내는 3D 아바타" role="img">
       <Canvas camera={{ position: [0, 0, 4.6], fov: 42 }} dpr={[1, 1.8]}>
-        <ambientLight intensity={0.55} />
-        <pointLight position={[3, 3, 4]} intensity={1.5} color={vitalityColor(v)} />
-        <pointLight position={[-3, -2, -3]} intensity={0.45} color="#4fa3e0" />
+        {/* 형태가 보이도록: 흰색 주광(위·왼쪽) + 푸른 보조광(아래) + 상태색 뒷빛(윤곽) */}
+        <ambientLight intensity={0.28} />
+        <directionalLight position={[3, 4, 5]} intensity={2.4} color="#ffffff" />
+        <pointLight position={[-4, -3, 2]} intensity={1.1} color="#4fa3e0" />
+        <pointLight position={[0, 3, -4]} intensity={2.2} color={vitalityColor(v)} />
         <Core vitality={v} />
         <EnergyMotes vitality={v} />
         <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.55} />
       </Canvas>
-      <div className="absolute top-3 left-4 text-[10px] font-mono tracking-widest text-white/40 uppercase pointer-events-none">
-        Chrono-Twin · live
-      </div>
     </div>
   );
 }

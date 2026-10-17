@@ -1,23 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  caffeineDecayCurve,
-  caffeineFamiliarUnits,
-  caffeineSafeHoursNeeded,
-} from "@/lib/chronoTwinModel";
+import { Candy, Coffee, Zap, type LucideIcon } from "lucide-react";
+import { caffeineDecayCurve, caffeineFamiliarUnits, caffeineSafeHoursNeeded } from "@/lib/chronoTwinModel";
 
-const CORAL = "#ff6a52";
-const AMBER = "#f6b352";
-
-const UNIT_ICON: Record<string, string> = { coffee: "☕", energy: "⚡", candy: "🍬" };
+const UNIT: Record<string, { icon: LucideIcon; suffix: string }> = {
+  coffee: { icon: Coffee, suffix: "잔" },
+  energy: { icon: Zap, suffix: "캔" },
+  candy: { icon: Candy, suffix: "개" },
+};
 
 /**
- * 홍서준(약학) 3주차 제작물 "Dose Echo"를 사이트에 통합한 버전.
- * 원본: 유리프/활동 내용/3주차/caffeine-dose-echo.html (독립 페이지).
- * 잔존 카페인(mg)을 실생활 소비 단위로 환산해 "숫자"를 "감각"으로 번역한다.
- * 사이트 본체(보라·초록)와 구분되도록 코랄·앰버를 그대로 유지 — 파트별 기여를
- * 시각적으로도 드러내는 의도적 선택.
+ * 홍서준(약학) "Dose Echo" — 잠들 때 몸에 남는 카페인(mg)을 일상의 단위로 바꿔 체감시킨다.
+ * 전윤서(생명공학)의 "카페인 컷오프(골든타임)" 역산도 한 줄로 함께 보여준다.
  */
 export default function CaffeineConverter({
   doseMg,
@@ -31,63 +26,57 @@ export default function CaffeineConverter({
   const units = useMemo(() => caffeineFamiliarUnits(residueMg), [residueMg]);
   const curve = useMemo(() => caffeineDecayCurve(Math.max(doseMg, 1), 10, 48), [doseMg]);
   const safeHours = caffeineSafeHoursNeeded(doseMg);
-  const stillUnsafe = safeHours > hoursElapsed;
-
-  const top = units.reduce((a, b) => (b.count > a.count ? b : a), units[0]);
+  const waitMore = safeHours - hoursElapsed;
+  const coffee = units.find((u) => u.key === "coffee");
 
   return (
-    <div
-      className="rounded-2xl p-5 md:p-6 border-l-[3px]"
-      style={{
-        borderLeftColor: CORAL,
-        background: "linear-gradient(155deg, rgba(255,106,82,0.07), rgba(246,179,82,0.03))",
-        border: "1px solid rgba(255,255,255,0.1)",
-      }}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-mono tracking-widest uppercase" style={{ color: CORAL }}>
-          Dose Echo
-        </h3>
-        <span className="text-[10px] font-mono text-white/30 uppercase">홍서준 · 약학</span>
-      </div>
-
-      <p className="text-sm text-white/60 leading-relaxed mb-4">
-        취침 시점에 몸에 남아있는 카페인 <b className="text-white/85">{residueMg.toFixed(0)}mg</b>은,
-        {top && top.count >= 0.1 ? (
+    <div className="card">
+      <p className="text-[17px] font-medium text-fg-2">잠들 때 몸에 남는 카페인</p>
+      <p className="mt-2 text-[clamp(64px,11vw,104px)] font-semibold leading-none tracking-[-0.04em] tabular-nums text-tx-orange">
+        {residueMg.toFixed(0)}
+        <span className="ml-1 text-[0.32em] font-medium tracking-normal text-fg-2">mg</span>
+      </p>
+      <p className="t-lead mt-4">
+        {coffee && coffee.count >= 0.1 ? (
           <>
-            {" "}
-            <b style={{ color: AMBER }}>{top.label} 약 {top.count.toFixed(1)}{top.key === "coffee" ? "잔" : top.key === "energy" ? "캔" : "개"}</b>
-            {" "}분량이 그대로 남아있는 것과 같아요.
+            아메리카노 <b className="font-semibold text-fg">{coffee.count.toFixed(1)}잔</b> 분량이 남아 있어요.
           </>
         ) : (
-          " 사실상 거의 다 대사된 양이에요."
+          "거의 다 분해됐어요."
         )}
       </p>
 
-      <div className="grid grid-cols-3 gap-2.5 mb-5">
-        {units.map((u) => (
-          <div key={u.key} className="rounded-xl bg-black/20 px-3 py-3 text-center">
-            <div className="text-lg mb-1">{UNIT_ICON[u.key]}</div>
-            <div className="text-base font-bold font-mono" style={{ color: AMBER }}>
-              {u.count.toFixed(1)}
+      <div className="mt-8 grid grid-cols-3 gap-3">
+        {units.map((u) => {
+          const { icon: Icon, suffix } = UNIT[u.key];
+          return (
+            <div key={u.key} className="tile text-center">
+              <Icon className="mx-auto h-6 w-6 text-tx-orange" strokeWidth={1.8} />
+              <p className="mt-3 text-[clamp(24px,3.4vw,34px)] font-semibold leading-none tabular-nums">
+                {u.count.toFixed(1)}
+                <span className="ml-0.5 text-[15px] font-medium text-fg-2">{suffix}</span>
+              </p>
+              <p className="mt-2 text-[14px] leading-tight text-fg-2">{u.label}</p>
             </div>
-            <div className="text-[10px] text-white/50 mt-0.5">{u.label}</div>
-            <div className="text-[9px] text-white/25 mt-0.5">{u.basis}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <DecayCurve curve={curve} markerHour={hoursElapsed} markerMg={residueMg} />
+      <div className="mt-8">
+        <DecayCurve curve={curve} markerHour={hoursElapsed} markerMg={residueMg} />
+        <div className="mt-2 flex justify-between text-[14px] text-fg-2">
+          <span>마신 직후</span>
+          <span>10시간 뒤</span>
+        </div>
+      </div>
 
-      <p className="text-[11px] text-white/40 mt-4 leading-relaxed">
-        {stillUnsafe ? (
+      <p className="mt-6 text-[19px] font-medium leading-snug">
+        {waitMore > 0 ? (
           <>
-            <span style={{ color: CORAL }}>⚠</span> 오늘 섭취량({doseMg.toFixed(0)}mg)이 안전 수준(50mg)
-            아래로 내려가려면 섭취 후 총 <b className="text-white/70">{safeHours.toFixed(1)}시간</b>이
-            필요해요 — 아직 {(safeHours - hoursElapsed).toFixed(1)}시간 더 기다려야 합니다.
+            완전히 안전해지려면 <span className="text-tx-orange">{waitMore.toFixed(1)}시간</span> 더 필요해요.
           </>
         ) : (
-          <>이미 안전 수준(50mg) 아래로 내려간 상태예요.</>
+          <span className="text-tx-green">이미 안전한 수준이에요.</span>
         )}
       </p>
     </div>
@@ -103,25 +92,27 @@ function DecayCurve({
   markerHour: number;
   markerMg: number;
 }) {
-  const W = 320, H = 96, padL = 4, padR = 4, padT = 8, padB = 18;
+  const W = 600;
+  const H = 150;
+  const pad = 14;
   const maxH = curve[curve.length - 1]?.h || 10;
   const maxMg = Math.max(1, ...curve.map((p) => p.mg));
 
-  const x = (h: number) => padL + (h / maxH) * (W - padL - padR);
-  const y = (mg: number) => padT + (1 - mg / maxMg) * (H - padT - padB);
+  const x = (h: number) => pad + (h / maxH) * (W - pad * 2);
+  const y = (mg: number) => pad + (1 - mg / maxMg) * (H - pad * 2);
 
-  const path = curve.map((p, i) => `${i === 0 ? "M" : "L"}${x(p.h).toFixed(1)},${y(p.mg).toFixed(1)}`).join(" ");
-  const mx = Math.min(x(markerHour), W - padR);
+  const line = curve.map((p, i) => `${i ? "L" : "M"}${x(p.h).toFixed(1)},${y(p.mg).toFixed(1)}`).join(" ");
+  const area = `${line} L${x(maxH)},${H - pad} L${x(0)},${H - pad} Z`;
+  const mx = Math.min(x(markerHour), W - pad);
   const my = y(markerMg);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="카페인 감소 곡선">
-      <line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
-      <path d={path} fill="none" stroke={CORAL} strokeWidth={2} />
-      <line x1={mx} y1={my} x2={mx} y2={H - padB} stroke={AMBER} strokeWidth={1} strokeDasharray="3,3" />
-      <circle cx={mx} cy={my} r={4} fill={AMBER} stroke="#0b0c10" strokeWidth={1.5} />
-      <text x={padL} y={H - 5} fill="rgba(255,255,255,0.3)" fontSize={9} fontFamily="ui-monospace, monospace">0h</text>
-      <text x={W - padR} y={H - 5} fill="rgba(255,255,255,0.3)" fontSize={9} fontFamily="ui-monospace, monospace" textAnchor="end">{maxH}h</text>
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="시간에 따라 카페인이 줄어드는 곡선">
+      <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} className="stroke-line/15" strokeWidth={2} />
+      <path d={area} className="fill-sys-orange/15" />
+      <path d={line} className="fill-none stroke-sys-orange" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+      <line x1={mx} y1={my} x2={mx} y2={H - pad} className="stroke-fg-3" strokeWidth={2} strokeDasharray="5 6" />
+      <circle cx={mx} cy={my} r={9} className="fill-sys-orange stroke-surface" strokeWidth={4} />
     </svg>
   );
 }
