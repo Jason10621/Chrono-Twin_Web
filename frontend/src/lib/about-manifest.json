@@ -1,0 +1,405 @@
+{
+ "s1-ideas": {
+  "kind": "html",
+  "bytes": 9442
+ },
+ "s1-notes": {
+  "kind": "html",
+  "bytes": 21991
+ },
+ "s1-plan4": {
+  "kind": "pdf",
+  "pages": 5,
+  "w": 1000,
+  "h": 1415,
+  "redacted": 30
+ },
+ "s2-hong": {
+  "kind": "pdf",
+  "pages": 6,
+  "w": 1000,
+  "h": 1295,
+  "redacted": 0
+ },
+ "s2-jeon": {
+  "kind": "pdf",
+  "pages": 3,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 0
+ },
+ "s2-lee": {
+  "kind": "pdf",
+  "pages": 3,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 1
+ },
+ "s2-logs": {
+  "kind": "pdf",
+  "pages": 3,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 7
+ },
+ "s2-report": {
+  "kind": "pdf",
+  "pages": 13,
+  "w": 1000,
+  "h": 1415,
+  "redacted": 0
+ },
+ "s2-synth": {
+  "kind": "html",
+  "bytes": 87929
+ },
+ "s2-yu": {
+  "kind": "pdf",
+  "pages": 9,
+  "w": 1000,
+  "h": 1413,
+  "redacted": 0
+ },
+ "s2-yun": {
+  "kind": "pdf",
+  "pages": 3,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 0
+ },
+ "s3-coding": {
+  "kind": "pdf",
+  "pages": 3,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 0
+ },
+ "s3-mlr": {
+  "kind": "html",
+  "bytes": 8549
+ },
+ "s3-plan": {
+  "kind": "pdf",
+  "pages": 10,
+  "w": 1000,
+  "h": 1415,
+  "redacted": 0
+ },
+ "s3-sim": {
+  "kind": "html",
+  "bytes": 58970
+ },
+ "s3-stages": {
+  "kind": "text",
+  "lines": 30,
+  "bytes": 3387
+ },
+ "s3-structure": {
+  "kind": "image",
+  "ext": "svg",
+  "bytes": 60879
+ },
+ "s4-direction": {
+  "kind": "pdf",
+  "pages": 2,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 1
+ },
+ "s4-form-blue": {
+  "kind": "pdf",
+  "pages": 5,
+  "w": 1000,
+  "h": 1416,
+  "redacted": 0
+ },
+ "s4-form-caf": {
+  "kind": "pdf",
+  "pages": 5,
+  "w": 1000,
+  "h": 1416,
+  "redacted": 0
+ },
+ "s4-form-led": {
+  "kind": "pdf",
+  "pages": 5,
+  "w": 1000,
+  "h": 1416,
+  "redacted": 0
+ },
+ "s4-guide-caf": {
+  "kind": "pdf",
+  "pages": 1,
+  "w": 1000,
+  "h": 1416,
+  "redacted": 0
+ },
+ "s4-sched-blue": {
+  "kind": "pdf",
+  "pages": 1,
+  "w": 1000,
+  "h": 1416,
+  "redacted": 0
+ },
+ "s4-sched-caf": {
+  "kind": "pdf",
+  "pages": 1,
+  "w": 1000,
+  "h": 1416,
+  "redacted": 0
+ },
+ "s4-sched-led": {
+  "kind": "pdf",
+  "pages": 1,
+  "w": 1000,
+  "h": 1416,
+  "redacted": 0
+ },
+ "s4-survey": {
+  "kind": "html",
+  "bytes": 57961
+ },
+ "s5-hong": {
+  "kind": "pdf",
+  "pages": 3,
+  "w": 1000,
+  "h": 1295,
+  "redacted": 0
+ },
+ "s5-jeon": {
+  "kind": "pdf",
+  "pages": 2,
+  "w": 1000,
+  "h": 1413,
+  "redacted": 0
+ },
+ "s5-report": {
+  "kind": "pdf",
+  "pages": 20,
+  "w": 1000,
+  "h": 1415,
+  "redacted": 0
+ },
+ "s5-yu": {
+  "kind": "pdf",
+  "pages": 5,
+  "w": 1000,
+  "h": 1413,
+  "redacted": 0
+ },
+ "s5-yun": {
+  "kind": "pdf",
+  "pages": 1,
+  "w": 1000,
+  "h": 1413,
+  "redacted": 0
+ },
+ "s6-corr": {
+  "kind": "code",
+  "lines": 221,
+  "bytes": 8188,
+  "lang": "py",
+  "path": "pipeline/correlation.py"
+ },
+ "s6-corrmap": {
+  "kind": "image",
+  "ext": "png",
+  "bytes": 110314
+ },
+ "s6-etl": {
+  "kind": "code",
+  "lines": 466,
+  "bytes": 19719,
+  "lang": "py",
+  "path": "pipeline/etl.py"
+ },
+ "s6-ledmap": {
+  "kind": "image",
+  "ext": "png",
+  "bytes": 29682
+ },
+ "s6-mctq": {
+  "kind": "code",
+  "lines": 174,
+  "bytes": 6450,
+  "lang": "py",
+  "path": "pipeline/transforms/mctq.py"
+ },
+ "s6-outliers": {
+  "kind": "code",
+  "lines": 238,
+  "bytes": 8723,
+  "lang": "py",
+  "path": "pipeline/outliers.py"
+ },
+ "s6-photo": {
+  "kind": "code",
+  "lines": 115,
+  "bytes": 4783,
+  "lang": "py",
+  "path": "pipeline/transforms/photobiology.py"
+ },
+ "s6-pk": {
+  "kind": "code",
+  "lines": 82,
+  "bytes": 2859,
+  "lang": "py",
+  "path": "pipeline/transforms/pharmacokinetics.py"
+ },
+ "s6-reg": {
+  "kind": "code",
+  "lines": 323,
+  "bytes": 13340,
+  "lang": "py",
+  "path": "pipeline/regression.py"
+ },
+ "s6-report": {
+  "kind": "text",
+  "lines": 128,
+  "bytes": 12109
+ },
+ "s6-schema": {
+  "kind": "code",
+  "lines": 412,
+  "bytes": 20205,
+  "lang": "py",
+  "path": "pipeline/schema.py"
+ },
+ "s6-sun": {
+  "kind": "code",
+  "lines": 100,
+  "bytes": 4373,
+  "lang": "py",
+  "path": "api_clients/sunrise_sunset.py"
+ },
+ "s6-test": {
+  "kind": "code",
+  "lines": 126,
+  "bytes": 5337,
+  "lang": "py",
+  "path": "tests/test_transforms.py"
+ },
+ "s7-avatar": {
+  "kind": "code",
+  "lines": 105,
+  "bytes": 4202,
+  "lang": "tsx",
+  "path": "frontend/src/components/ChronoTwinAvatar.tsx"
+ },
+ "s7-caffeine": {
+  "kind": "code",
+  "lines": 119,
+  "bytes": 4675,
+  "lang": "tsx",
+  "path": "frontend/src/components/CaffeineConverter.tsx"
+ },
+ "s7-dose": {
+  "kind": "html",
+  "bytes": 14175
+ },
+ "s7-hong-1": {
+  "kind": "pdf",
+  "pages": 2,
+  "w": 1000,
+  "h": 1415,
+  "redacted": 0
+ },
+ "s7-hong-2": {
+  "kind": "pdf",
+  "pages": 3,
+  "w": 1000,
+  "h": 1415,
+  "redacted": 0
+ },
+ "s7-jeon": {
+  "kind": "pdf",
+  "pages": 2,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 0
+ },
+ "s7-map": {
+  "kind": "code",
+  "lines": 138,
+  "bytes": 5786,
+  "lang": "tsx",
+  "path": "frontend/src/components/WorldJetlagMap.tsx"
+ },
+ "s7-model": {
+  "kind": "code",
+  "lines": 417,
+  "bytes": 16653,
+  "lang": "ts",
+  "path": "frontend/src/lib/chronoTwinModel.ts"
+ },
+ "s7-prompt": {
+  "kind": "code",
+  "lines": 33,
+  "bytes": 2624,
+  "lang": "ts",
+  "path": "src/lib/ai/prompt.ts"
+ },
+ "s7-report": {
+  "kind": "pdf",
+  "pages": 15,
+  "w": 1000,
+  "h": 1415,
+  "redacted": 0
+ },
+ "s7-sql": {
+  "kind": "code",
+  "lines": 148,
+  "bytes": 6192,
+  "lang": "sql",
+  "path": "supabase/migrations/0006_task_submissions.sql"
+ },
+ "s7-yu-1": {
+  "kind": "pdf",
+  "pages": 2,
+  "w": 1000,
+  "h": 1413,
+  "redacted": 0
+ },
+ "s7-yu-2": {
+  "kind": "pdf",
+  "pages": 1,
+  "w": 1000,
+  "h": 1414,
+  "redacted": 0
+ },
+ "s8-chat": {
+  "kind": "code",
+  "lines": 146,
+  "bytes": 5546,
+  "lang": "tsx",
+  "path": "frontend/src/components/ChronoAI.tsx"
+ },
+ "s8-css": {
+  "kind": "code",
+  "lines": 291,
+  "bytes": 8846,
+  "lang": "css",
+  "path": "frontend/src/app/globals.css"
+ },
+ "s8-live": {
+  "kind": "code",
+  "lines": 58,
+  "bytes": 2058,
+  "lang": "ts",
+  "path": "frontend/src/lib/liveContext.ts"
+ },
+ "s8-route": {
+  "kind": "code",
+  "lines": 190,
+  "bytes": 9272,
+  "lang": "ts",
+  "path": "frontend/src/app/api/chrono-ai/route.ts"
+ },
+ "s8-whatif": {
+  "kind": "code",
+  "lines": 74,
+  "bytes": 3366,
+  "lang": "tsx",
+  "path": "frontend/src/components/WhatIfSection.tsx"
+ }
+}

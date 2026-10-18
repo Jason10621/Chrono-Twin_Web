@@ -1,0 +1,162 @@
+
+<style>
+  .exp-grid { display: flex; flex-direction: column; gap: 20px; padding: 1.5rem 0; }
+  .exp-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; }
+  .exp-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .exp-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+  .exp-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+  .exp-body { padding: 14px 18px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .exp-section-label { font-size: 11px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .exp-section-val { font-size: 13px; color: var(--color-text-secondary); line-height: 1.55; }
+  .exp-stat-badge { display: inline-block; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: var(--border-radius-md); margin-top: 4px; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding: 0 18px 14px; }
+  .tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); }
+
+  .n1 { background: #E6F1FB; color: #0C447C; }
+  .n2 { background: #E1F5EE; color: #085041; }
+  .n3 { background: #FAEEDA; color: #633806; }
+  .n4 { background: #EEEDFE; color: #3C3489; }
+  .n5 { background: #FAECE7; color: #712B13; }
+
+  .s1 { background: #E6F1FB; color: #185FA5; }
+  .s2 { background: #EAF3DE; color: #3B6D11; }
+  .s3 { background: #FAEEDA; color: #854F0B; }
+  .s4 { background: #EEEDFE; color: #534AB7; }
+  .s5 { background: #FAECE7; color: #993C1D; }
+</style>
+
+<h2 class="sr-only">유리프 연구 기반 고등학교 적합 실험 아이디어 5가지 — 각 실험의 가설, 측정 방법, 통계 분석 방법을 정리한 카드</h2>
+
+<div class="exp-grid">
+
+  <!-- 실험 1 -->
+  <div class="exp-card">
+    <div class="exp-header">
+      <div class="exp-num n1">1</div>
+      <div class="exp-title">취침 전 스마트폰 사용 시간 vs 실제 취침 시각 지연 상관관계</div>
+    </div>
+    <div class="exp-body">
+      <div>
+        <div class="exp-section-label">가설</div>
+        <div class="exp-section-val">취침 전 블루라이트 노출 시간이 길수록 취침 시각이 유의미하게 늦어진다</div>
+      </div>
+      <div>
+        <div class="exp-section-label">측정 방법</div>
+        <div class="exp-section-val">1–2주간 수면 일지 기록. 스마트폰 스크린타임 앱 데이터(분 단위) + 실제 취침 시각 자기보고</div>
+      </div>
+      <div>
+        <div class="exp-section-label">통계 분석</div>
+        <div class="exp-section-val"><strong>피어슨 상관계수(r)</strong> + 단순선형회귀. 노출 시간(X) → 취침 지연(분, Y) 회귀식 도출</div>
+        <span class="exp-stat-badge s1">상관분석 · 회귀분석</span>
+      </div>
+    </div>
+    <div class="tag-row">
+      <span class="tag">블루라이트</span><span class="tag">멜라토닌 억제</span><span class="tag">스마트폰 스크린타임</span><span class="tag">수면 위상</span>
+    </div>
+  </div>
+
+  <!-- 실험 2 -->
+  <div class="exp-card">
+    <div class="exp-header">
+      <div class="exp-num n2">2</div>
+      <div class="exp-title">카페인 섭취 타이밍 vs 수면 개시 시각 지연 — 취침 전 몇 시간이 임계점인가</div>
+    </div>
+    <div class="exp-body">
+      <div>
+        <div class="exp-section-label">가설</div>
+        <div class="exp-section-val">카페인 최종 섭취 시각이 취침 시각에 가까울수록 수면 개시가 지연되며, 6시간 이내 섭취군이 이외 군과 유의미하게 다르다</div>
+      </div>
+      <div>
+        <div class="exp-section-label">측정 방법</div>
+        <div class="exp-section-val">설문으로 카페인 섭취 시각·종류·용량(mg) 및 취침·기상 시각 수집. 섭취 타이밍별 3그룹 분류(6시간 이내 / 6–10시간 / 10시간 이상)</div>
+      </div>
+      <div>
+        <div class="exp-section-label">통계 분석</div>
+        <div class="exp-section-val">3그룹 간 수면 개시 지연 시간을 <strong>일원분산분석(ANOVA)</strong>으로 비교. 사후검정(Tukey HSD)으로 어느 그룹이 유의미하게 다른지 특정</div>
+        <span class="exp-stat-badge s2">ANOVA · 사후검정</span>
+      </div>
+    </div>
+    <div class="tag-row">
+      <span class="tag">카페인</span><span class="tag">아데노신 길항</span><span class="tag">약동학</span><span class="tag">수면 항상성</span>
+    </div>
+  </div>
+
+  <!-- 실험 3 -->
+  <div class="exp-card">
+    <div class="exp-header">
+      <div class="exp-num n3">3</div>
+      <div class="exp-title">크로노타입(아침형/저녁형)과 시험 성적 — 시험 시각과의 일치도가 성적에 영향을 주는가</div>
+    </div>
+    <div class="exp-body">
+      <div>
+        <div class="exp-section-label">가설</div>
+        <div class="exp-section-val">자신의 인지 피크 타임과 시험 시각이 일치하는 학생이 불일치 학생보다 더 높은 점수를 기록한다</div>
+      </div>
+      <div>
+        <div class="exp-section-label">측정 방법</div>
+        <div class="exp-section-val">MEQ(아침형·저녁형 설문지) 또는 MCTQ로 크로노타입 분류. 학교 내 모의시험(오전 9시·오후 1시)에서의 과목별 점수 수집</div>
+      </div>
+      <div>
+        <div class="exp-section-label">통계 분석</div>
+        <div class="exp-section-val">크로노타입 × 시험 시각 일치 여부를 독립변수로 하는 <strong>독립표본 t검정</strong> 또는 2×2 이원분산분석. 효과 크기(Cohen's d) 산출</div>
+        <span class="exp-stat-badge s3">t검정 · 이원분산분석</span>
+      </div>
+    </div>
+    <div class="tag-row">
+      <span class="tag">크로노타입</span><span class="tag">인지 피크</span><span class="tag">사회적 시차</span><span class="tag">학업 성취도</span>
+    </div>
+  </div>
+
+  <!-- 실험 4 -->
+  <div class="exp-card">
+    <div class="exp-header">
+      <div class="exp-num n4">4</div>
+      <div class="exp-title">주중·주말 수면 시각 차이(사회적 시차, Social Jetlag)와 월요일 오전 집중력 저하</div>
+    </div>
+    <div class="exp-body">
+      <div>
+        <div class="exp-section-label">가설</div>
+        <div class="exp-section-val">주중-주말 취침·기상 시각 차이(MSFsc)가 클수록 월요일 오전 자기보고 집중력 및 간단한 인지 과제 점수가 낮다</div>
+      </div>
+      <div>
+        <div class="exp-section-label">측정 방법</div>
+        <div class="exp-section-val">MCTQ 기반 MSFsc 계산(주중/주말 수면 시각 수집). 월요일 오전 1–2교시 직후 집중력 자기평가(1–10점) + 간단 반응속도 앱 테스트</div>
+      </div>
+      <div>
+        <div class="exp-section-label">통계 분석</div>
+        <div class="exp-section-val">MSFsc(연속변수)와 집중력 점수 간 <strong>스피어만 상관분석</strong>(비정규분포 고려). 그룹화 시 맨-휘트니 U검정으로 검증</div>
+        <span class="exp-stat-badge s4">스피어만 r · 비모수검정</span>
+      </div>
+    </div>
+    <div class="tag-row">
+      <span class="tag">Social Jetlag</span><span class="tag">MSFsc</span><span class="tag">수면 부채</span><span class="tag">월요일 증후군</span>
+    </div>
+  </div>
+
+  <!-- 실험 5 -->
+  <div class="exp-card">
+    <div class="exp-header">
+      <div class="exp-num n5">5</div>
+      <div class="exp-title">수면 시간 총량, 블루라이트, 카페인을 동시에 고려한 다중 변수 — 수면 위상 지연 예측 모형</div>
+    </div>
+    <div class="exp-body">
+      <div>
+        <div class="exp-section-label">가설</div>
+        <div class="exp-section-val">수면 부족 누적량, 블루라이트 노출, 카페인 총량 세 변수가 수면 위상 지연을 독립적으로 설명하며, 조합하면 예측력이 크게 높아진다</div>
+      </div>
+      <div>
+        <div class="exp-section-label">측정 방법</div>
+        <div class="exp-section-val">1주간 수면 일지(취침·기상 시각), 스크린타임, 카페인 섭취량 동시 수집. 표본 30명 이상 확보. Z-score 이상치 제거 후 분석</div>
+      </div>
+      <div>
+        <div class="exp-section-label">통계 분석</div>
+        <div class="exp-section-val"><strong>다중선형회귀분석</strong>으로 각 변수의 독립적 기여도(β계수) 및 모형 설명력(R²) 산출. VIF로 다중공선성 점검</div>
+        <span class="exp-stat-badge s5">다중회귀 · R² · β계수</span>
+      </div>
+    </div>
+    <div class="tag-row">
+      <span class="tag">다중회귀</span><span class="tag">ETL 파이프라인 연계</span><span class="tag">Z-score 이상치 제거</span><span class="tag">통합 데이터 플랫폼</span>
+    </div>
+  </div>
+
+</div>

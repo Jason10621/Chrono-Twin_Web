@@ -29,7 +29,7 @@ const config: Config = {
           '"Malgun Gothic"',
           "sans-serif",
         ],
-        mono: ["ui-monospace", '"SF Mono"', "SFMono-Regular", "Menlo", "monospace"],
+        mono: ["ui-monospace", '"SF Mono"', "SFMono-Regular", "Menlo", '"Cascadia Code"', "Consolas", "monospace"],
       },
       colors: {
         bg: rgb("bg"),

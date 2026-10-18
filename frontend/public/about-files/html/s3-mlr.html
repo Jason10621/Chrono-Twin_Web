@@ -1,0 +1,164 @@
+
+<h2 class="sr-only">다중선형회귀 작동 원리 인터랙티브 시각화 — 블루라이트, 카페인, 수면부채 세 변수가 수면 위상 지연에 미치는 독립적 기여도를 실시간으로 확인할 수 있습니다.</h2>
+
+<style>
+.row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.var-label{font-size:13px;color:var(--color-text-secondary);width:110px;flex-shrink:0;}
+.var-val{font-size:13px;font-weight:500;width:52px;text-align:right;flex-shrink:0;}
+.bar-track{flex:1;height:6px;background:var(--color-border-tertiary);border-radius:3px;position:relative;}
+.bar-fill{height:6px;border-radius:3px;transition:width .25s;}
+.contrib-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.contrib-name{font-size:12px;color:var(--color-text-secondary);width:90px;flex-shrink:0;}
+.contrib-bar-wrap{flex:1;height:18px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden;position:relative;}
+.contrib-bar{height:18px;border-radius:4px;transition:width .3s;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;}
+.contrib-num{font-size:11px;font-weight:500;white-space:nowrap;}
+.eq-box{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:12px 16px;font-size:13px;color:var(--color-text-secondary);margin:16px 0;line-height:2;}
+.eq-term{font-weight:500;}
+.result-big{font-size:36px;font-weight:500;transition:color .3s;}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:18px 0;}
+.sec-label{font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+.beta-table{width:100%;border-collapse:collapse;font-size:12px;}
+.beta-table td{padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);}
+.beta-table td:last-child{text-align:right;font-weight:500;color:var(--color-text-primary);}
+.beta-table tr:last-child td{border-bottom:none;}
+</style>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:4px 0;">
+
+<div>
+  <div class="sec-label">독립변수 입력</div>
+
+  <div class="row">
+    <span class="var-label">블루라이트 X<sub>1</sub></span>
+    <input type="range" min="0" max="120" value="60" step="1" id="sl1" style="flex:1;" oninput="calc()">
+    <span class="var-val" id="v1">60분</span>
+  </div>
+  <div style="font-size:11px;color:var(--color-text-tertiary);margin:-8px 0 12px 110px;">취침 2h 전 스마트폰 사용 (0–120분)</div>
+
+  <div class="row">
+    <span class="var-label">카페인 잔류 X<sub>2</sub></span>
+    <input type="range" min="0" max="400" value="125" step="5" id="sl2" style="flex:1;" oninput="calc()">
+    <span class="var-val" id="v2">125mg</span>
+  </div>
+  <div style="font-size:11px;color:var(--color-text-tertiary);margin:-8px 0 12px 110px;">취침 시각 혈중 잔류량 (반감기 적용)</div>
+
+  <div class="row">
+    <span class="var-label">수면 부채 X<sub>3</sub></span>
+    <input type="range" min="0" max="900" value="300" step="10" id="sl3" style="flex:1;" oninput="calc()">
+    <span class="var-val" id="v3">300분</span>
+  </div>
+  <div style="font-size:11px;color:var(--color-text-tertiary);margin:-8px 0 12px 110px;">직전 5일 누적 수면 부족 (MSFsc 기반)</div>
+
+  <div class="divider"></div>
+  <div class="sec-label">회귀 방정식 (β 계수 적용)</div>
+  <div class="eq-box">
+    Y = <span class="eq-term" style="color:#185FA5;">β<sub>1</sub></span>·X<sub>1</sub>
+    &nbsp;+&nbsp;<span class="eq-term" style="color:#854F0B;">β<sub>2</sub></span>·X<sub>2</sub>
+    &nbsp;+&nbsp;<span class="eq-term" style="color:#534AB7;">β<sub>3</sub></span>·X<sub>3</sub>
+    &nbsp;+&nbsp;ε<br>
+    = <span id="eq-detail" style="font-weight:500;">—</span>
+  </div>
+
+  <table class="beta-table">
+    <tr><td style="color:var(--color-text-tertiary);">β<sub>1</sub> (블루라이트)</td><td>0.18 / 분</td></tr>
+    <tr><td style="color:var(--color-text-tertiary);">β<sub>2</sub> (카페인 잔류)</td><td>0.22 / mg</td></tr>
+    <tr><td style="color:var(--color-text-tertiary);">β<sub>3</sub> (수면 부채)</td><td>0.045 / 분</td></tr>
+  </table>
+</div>
+
+<div>
+  <div class="sec-label">결과 — 수면 위상 지연량</div>
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+    <span class="result-big" id="result-num">—</span>
+    <span style="font-size:16px;color:var(--color-text-secondary);">분 지연</span>
+  </div>
+  <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:18px;" id="result-time">예측 취침 시각: —</div>
+
+  <div class="divider"></div>
+  <div class="sec-label">변수별 독립 기여도 분해</div>
+
+  <div class="contrib-row">
+    <span class="contrib-name">블루라이트</span>
+    <div class="contrib-bar-wrap">
+      <div class="contrib-bar" id="bar1" style="background:#B5D4F4;">
+        <span class="contrib-num" style="color:#0C447C;" id="bn1">—</span>
+      </div>
+    </div>
+  </div>
+  <div class="contrib-row">
+    <span class="contrib-name">카페인 잔류</span>
+    <div class="contrib-bar-wrap">
+      <div class="contrib-bar" id="bar2" style="background:#FAC775;">
+        <span class="contrib-num" style="color:#633806;" id="bn2">—</span>
+      </div>
+    </div>
+  </div>
+  <div class="contrib-row">
+    <span class="contrib-name">수면 부채</span>
+    <div class="contrib-bar-wrap">
+      <div class="contrib-bar" id="bar3" style="background:#CECBF6;">
+        <span class="contrib-num" style="color:#3C3489;" id="bn3">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="sec-label">다중공선성 진단 (VIF)</div>
+  <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8;">
+    세 변수가 <span style="font-weight:500;">동시에</span> 대입되어도<br>
+    서로 독립적으로 Y에 영향을 줌.<br>
+    VIF &lt; 2 → 다중공선성 없음 (안전)
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+    <span style="font-size:11px;background:var(--color-background-success);color:var(--color-text-success);padding:3px 10px;border-radius:12px;">VIF X1 = 1.12</span>
+    <span style="font-size:11px;background:var(--color-background-success);color:var(--color-text-success);padding:3px 10px;border-radius:12px;">VIF X2 = 1.08</span>
+    <span style="font-size:11px;background:var(--color-background-success);color:var(--color-text-success);padding:3px 10px;border-radius:12px;">VIF X3 = 1.19</span>
+  </div>
+
+  <div class="divider"></div>
+  <button onclick="sendPrompt('다중선형회귀에서 표준화 베타(β*)와 R² 의미를 더 설명해줘')" style="width:100%;font-size:13px;">β* 와 R² 더 알아보기 ↗</button>
+</div>
+
+</div>
+
+<script>
+function calc(){
+  const x1=+document.getElementById('sl1').value;
+  const x2=+document.getElementById('sl2').value;
+  const x3=+document.getElementById('sl3').value;
+  document.getElementById('v1').textContent=x1+'분';
+  document.getElementById('v2').textContent=x2+'mg';
+  document.getElementById('v3').textContent=x3+'분';
+
+  const b1=0.18, b2=0.22, b3=0.045;
+  const d1=Math.round(b1*x1);
+  const d2=Math.round(b2*x2);
+  const d3=Math.round(b3*x3);
+  const total=d1+d2+d3;
+
+  document.getElementById('eq-detail').innerHTML=
+    '<span style="color:#185FA5;">'+d1+'</span> + <span style="color:#854F0B;">'+d2+'</span> + <span style="color:#534AB7;">'+d3+'</span> = '+total+'분';
+
+  const el=document.getElementById('result-num');
+  el.textContent='+'+total;
+  el.style.color=total>90?'var(--color-text-danger)':total>40?'var(--color-text-warning)':'var(--color-text-success)';
+
+  const baseH=23, baseM=0;
+  const totalM=baseH*60+baseM+total;
+  const hh=Math.floor(totalM/60)%24;
+  const mm=totalM%60;
+  document.getElementById('result-time').textContent=
+    '기준 23:00 → 예측 취침 '+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+
+  const maxD=Math.max(d1,d2,d3,1);
+  const setBar=(id,bn,val,mx)=>{
+    const pct=Math.round(val/mx*100);
+    document.getElementById(id).style.width=Math.max(pct,8)+'%';
+    document.getElementById(bn).textContent='+'+val+'분 ('+pct+'%)';
+  };
+  setBar('bar1','bn1',d1,maxD);
+  setBar('bar2','bn2',d2,maxD);
+  setBar('bar3','bn3',d3,maxD);
+}
+calc();
+</script>

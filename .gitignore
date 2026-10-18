@@ -24,3 +24,8 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# About 에셋 빌더의 오피스 변환 캐시
+tools/.cache/
+# 학번 목록(공개 금지)
+tools/.student_ids

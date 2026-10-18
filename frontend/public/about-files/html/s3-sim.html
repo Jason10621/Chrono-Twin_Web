@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ULIF — 수면 위상 다중변수 예측 모형</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0b0c10;
+    --bg-card: #12141a;
+    --bg-card2: #191c25;
+    --bg-input: #0f111a;
+    --accent-blue: #4fa3e0;
+    --accent-teal: #2dd4bf;
+    --accent-amber: #f59e0b;
+    --accent-red: #f87171;
+    --accent-purple: #a78bfa;
+    --accent-green: #6ee7b7;
+    --text-primary: #f0f2f8;
+    --text-secondary: #8a93ad;
+    --text-muted: #4a5266;
+    --border: rgba(255,255,255,0.07);
+    --border-accent: rgba(79,163,224,0.3);
+    --font-main: 'Noto Sans KR', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .header-left h1 {
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--accent-teal);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .header-left h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+  .header-left h2 span { color: var(--accent-blue); }
+  .header-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+    letter-spacing: 0.05em;
+  }
+  .tag-blue  { color: var(--accent-blue);   border-color: rgba(79,163,224,0.35);   background: rgba(79,163,224,0.07); }
+  .tag-teal  { color: var(--accent-teal);   border-color: rgba(45,212,191,0.35);   background: rgba(45,212,191,0.07); }
+  .tag-amber { color: var(--accent-amber);  border-color: rgba(245,158,11,0.35);   background: rgba(245,158,11,0.07); }
+  .tag-purple{ color: var(--accent-purple); border-color: rgba(167,139,250,0.35);  background: rgba(167,139,250,0.07);}
+
+  /* LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 100px);
+  }
+  .panel-left {
+    border-right: 1px solid var(--border);
+    padding: 28px 28px 40px;
+    overflow-y: auto;
+    background: var(--bg-card);
+  }
+  .panel-right {
+    padding: 28px 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* INPUT GROUPS */
+  .input-group { margin-bottom: 20px; }
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .input-group label .label-en {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 6px;
+  }
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--accent-teal);
+    transform: scale(1.2);
+  }
+  input[type="range"].amber::-webkit-slider-thumb { background: var(--accent-amber); }
+  input[type="range"].amber:hover::-webkit-slider-thumb { background: #fbbf24; }
+  input[type="range"].teal::-webkit-slider-thumb { background: var(--accent-teal); }
+  input[type="range"].purple::-webkit-slider-thumb { background: var(--accent-purple); }
+  input[type="range"].red::-webkit-slider-thumb { background: var(--accent-red); }
+  .val-badge {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 60px;
+    text-align: right;
+    color: var(--text-primary);
+  }
+
+  /* SELECT */
+  select {
+    width: 100%;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: var(--font-main);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5266' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  select:focus { border-color: var(--border-accent); }
+
+  /* CHECKBOX GRID */
+  .check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
+  }
+  .check-item.active {
+    border-color: rgba(245,158,11,0.4);
+    background: rgba(245,158,11,0.08);
+  }
+  .check-item input { display: none; }
+  .check-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-muted);
+    transition: 0.2s;
+    flex-shrink: 0;
+  }
+  .check-item.active .check-dot {
+    background: var(--accent-amber);
+    border-color: var(--accent-amber);
+  }
+  .check-item .item-info { flex: 1; }
+  .check-item .item-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+  .check-item .item-mg {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+  }
+  .check-item .item-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .count-btn {
+    background: var(--border);
+    border: none;
+    color: var(--text-secondary);
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .count-btn:hover { background: rgba(255,255,255,0.12); }
+  .count-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    min-width: 14px;
+    text-align: center;
+    color: var(--accent-amber);
+  }
+
+  /* SLEEP DEBT DAYS */
+  .debt-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  .debt-day {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .debt-day .day-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .debt-day input[type="number"] {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--accent-purple);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    text-align: center;
+    outline: none;
+    font-weight: 500;
+  }
+  .debt-day input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .debt-bar-container {
+    height: 40px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 3px;
+    position: relative;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .debt-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--accent-purple);
+    opacity: 0.5;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.3s ease;
+  }
+
+  /* CHRONOTYPE */
+  .chrono-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .chrono-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    user-select: none;
+  }
+  .chrono-btn .c-icon { font-size: 16px; display: block; margin-bottom: 3px; }
+  .chrono-btn .c-label { font-size: 10px; color: var(--text-muted); }
+  .chrono-btn.active { border-color: rgba(45,212,191,0.5); background: rgba(45,212,191,0.1); }
+  .chrono-btn.active .c-label { color: var(--accent-teal); }
+
+  /* RESULT PANEL */
+  .result-top {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .result-card {
+    background: var(--bg-card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .result-card.card-blue::before  { background: var(--accent-blue); }
+  .result-card.card-amber::before { background: var(--accent-amber); }
+  .result-card.card-red::before   { background: var(--accent-red); }
+  .result-card.card-teal::before  { background: var(--accent-teal); }
+  .result-card.card-purple::before{ background: var(--accent-purple); }
+  .result-card .rc-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .result-card .rc-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .result-card .rc-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .card-blue  .rc-value { color: var(--accent-blue);   }
+  .card-amber .rc-value { color: var(--accent-amber);  }
+  .card-red   .rc-value { color: var(--accent-red);    }
+  .card-teal  .rc-value { color: var(--accent-teal);   }
+  .card-purple.rc-value { color: var(--accent-purple); }
+
+  /* PHASE CLOCK */
+  .clock-container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .clock-wrap {
+    flex-shrink: 0;
+    position: relative;
+  }
+  #phaseClock {
+    display: block;
+  }
+  .clock-legend {
+    flex: 1;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .legend-item:last-child { border-bottom: none; }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-label { color: var(--text-secondary); flex: 1; }
+  .legend-time {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  /* REGRESSION BREAKDOWN */
+  .regression-table {
+    background: var(--bg-card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .reg-head {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 60px;
+    gap: 0;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .reg-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px 60px;
+    gap: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.15s;
+  }
+  .reg-row:last-child { border-bottom: none; }
+  .reg-row:hover { background: rgba(255,255,255,0.02); }
+  .reg-var-name { font-size: 13px; font-weight: 500; }
+  .reg-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+  .reg-beta { font-family: var(--font-mono); font-size: 13px; font-weight: 500; text-align: right; }
+  .beta-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .beta-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .beta-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .sig-badge {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .sig-yes { background: rgba(110,231,183,0.15); color: var(--accent-green); }
+  .sig-no  { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+
+  /* CAFFEINE DECAY CHART */
+  .chart-wrap {
+    background: var(--bg-card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .chart-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .chart-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  /* ALERT BOX */
+  .alert-box {
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .alert-warn {
+    background: rgba(248,113,113,0.07);
+    border-color: rgba(248,113,113,0.25);
+    color: #fca5a5;
+  }
+  .alert-ok {
+    background: rgba(110,231,183,0.07);
+    border-color: rgba(110,231,183,0.25);
+    color: var(--accent-green);
+  }
+  .alert-info {
+    background: rgba(79,163,224,0.07);
+    border-color: rgba(79,163,224,0.25);
+    color: var(--accent-blue);
+  }
+  .alert-icon {
+    font-size: 16px;
+    margin-right: 8px;
+  }
+
+  /* PHASE SHIFT CHART OUTER */
+  .big-chart-wrap {
+    background: var(--bg-card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  /* REFERENCES */
+  .refs {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 8px;
+  }
+  .refs h3 {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .ref-item {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+  }
+  .ref-item:last-child { border-bottom: none; }
+  .ref-num {
+    font-family: var(--font-mono);
+    color: var(--accent-blue);
+    font-size: 10px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  /* FORMULA DISPLAY */
+  .formula-box {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-blue);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 12px 0;
+    line-height: 1.8;
+  }
+  .formula-box .f-highlight { color: var(--accent-blue); }
+  .formula-box .f-amber { color: var(--accent-amber); }
+  .formula-box .f-teal { color: var(--accent-teal); }
+  .formula-box .f-purple { color: var(--accent-purple); }
+  .formula-box .f-red { color: var(--accent-red); }
+
+  /* ANIMATE */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .result-card, .chart-wrap, .big-chart-wrap, .regression-table { animation: fadeIn 0.4s ease both; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  /* MOBILE */
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+    .result-top { grid-template-columns: repeat(2, 1fr); }
+    .clock-container { flex-direction: column; }
+    .reg-head, .reg-row { grid-template-columns: 1fr 70px 70px 60px; }
+    .reg-head > :nth-child(3), .reg-row > :nth-child(3) { display: none; }
+    .header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>ULIF · Experiment 5 · Multiple Linear Regression</h1>
+    <h2>수면 위상 <span>다중변수 예측 모형</span></h2>
+  </div>
+  <div class="header-tags">
+    <span class="tag tag-blue">블루라이트 억제</span>
+    <span class="tag tag-amber">카페인 약동학</span>
+    <span class="tag tag-purple">수면 부채 MSFsc</span>
+    <span class="tag tag-teal">다중선형회귀</span>
+  </div>
+</header>
+
+<div class="main">
+  <!-- LEFT PANEL: INPUTS -->
+  <div class="panel-left">
+
+    <div class="section-title">크로노타입 <span style="font-size:9px;">(MEQ 기반)</span></div>
+    <div class="chrono-row">
+      <div class="chrono-btn" data-chrono="-90" onclick="selectChrono(this, -90)">
+        <span class="c-icon">☀️</span><span class="c-label">극단<br>아침형</span>
+      </div>
+      <div class="chrono-btn" data-chrono="-45" onclick="selectChrono(this, -45)">
+        <span class="c-icon">🌤</span><span class="c-label">중간<br>아침형</span>
+      </div>
+      <div class="chrono-btn active" data-chrono="0" onclick="selectChrono(this, 0)">
+        <span class="c-icon">⚖️</span><span class="c-label">중간형</span>
+      </div>
+      <div class="chrono-btn" data-chrono="45" onclick="selectChrono(this, 45)">
+        <span class="c-icon">🌙</span><span class="c-label">중간<br>저녁형</span>
+      </div>
+      <div class="chrono-btn" data-chrono="90" onclick="selectChrono(this, 90)">
+        <span class="c-icon">🦉</span><span class="c-label">극단<br>저녁형</span>
+      </div>
+    </div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+      크로노타입 기저 위상: <span id="chronoBase" style="color:var(--accent-teal); font-family:var(--font-mono);">0분</span>
+    </div>
+
+    <div class="section-divider"></div>
+    <div class="section-title">블루라이트 노출 <span style="font-size:9px;">(ipRGC 자극)</span></div>
+    <div class="input-group">
+      <label>취침 2시간 전 스마트폰 사용 시간 <span class="label-en">blue-light exposure</span></label>
+      <div class="input-row">
+        <input type="range" id="bluelight" min="0" max="120" value="60" step="5" oninput="update()">
+        <span class="val-badge" id="bl-val" style="color:var(--accent-blue)">60분</span>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>스마트폰 화면 밝기 <span class="label-en">screen brightness</span></label>
+      <div class="input-row">
+        <input type="range" class="teal" id="brightness" min="20" max="100" value="70" step="5" oninput="update()">
+        <span class="val-badge" id="br-val" style="color:var(--accent-teal)">70%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">
+        고밝기일수록 446–477nm 청색광 방출 강도 증가 → 멜라토닌 억제 배율 상승
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+    <div class="section-title">카페인 섭취 <span style="font-size:9px;">(오후 6시 이후)</span></div>
+
+    <div class="check-grid" id="caffeineGrid">
+      <!-- items injected by JS -->
+    </div>
+
+    <div class="formula-box" style="margin-top:14px;">
+      <div>잔류 농도: C(t) = <span class="f-amber">C₀</span> × (½)<sup>(t / <span class="f-teal">5.5h</span>)</sup></div>
+      <div style="margin-top:4px;">취침시 잔류: <span id="cafRemain" class="f-amber">0</span> mg</div>
+    </div>
+
+    <div class="section-divider"></div>
+    <div class="section-title">수면 부채 누적 <span style="font-size:9px;">(직전 5일)</span></div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">
+      실제 수면 시간(h) 입력 — 권장 8시간 미달량 자동 계산
+    </div>
+    <div class="debt-grid" id="debtGrid"></div>
+    <div style="margin-top:12px; font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);">
+      누적 수면 부채: <span id="totalDebt" style="color:var(--accent-purple); font-weight:700;">0분</span>
+    </div>
+    <div class="formula-box" style="border-left-color:var(--accent-purple);">
+      <div>MSF = Sleep_Onset<sub>f</sub> + <span class="f-purple">SD<sub>f</sub></span> / 2</div>
+      <div>MSFsc = MSF − (<span class="f-purple">SD<sub>f</sub></span> − <span class="f-teal">SD<sub>w</sub></span>) / 2</div>
+    </div>
+
+    <div class="section-divider"></div>
+    <div class="section-title">추가 통제 변수</div>
+    <div class="input-group">
+      <label>운동 여부 오늘 30분+ 운동 <span class="label-en">physical activity</span></label>
+      <div class="input-row" style="gap:12px;">
+        <div id="ex-no" class="chrono-btn active" style="flex:1;padding:8px;" onclick="setExercise(false, this)">
+          <span class="c-icon" style="font-size:13px;">🛋</span><span class="c-label">운동 없음</span>
+        </div>
+        <div id="ex-yes" class="chrono-btn" style="flex:1;padding:8px;" onclick="setExercise(true, this)">
+          <span class="c-icon" style="font-size:13px;">🏃</span><span class="c-label">운동함</span>
+        </div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>수면유도제 복용 여부 <span class="label-en">sleep-aid use</span></label>
+      <select id="sleepAid" onchange="update()">
+        <option value="0">복용 없음</option>
+        <option value="-20">멜라토닌 (취침 2h 전 저용량) — 위상 전진</option>
+        <option value="15">멜라토닌 (취침 직전·과용량) — 위상 지연</option>
+        <option value="25">항히스타민 수면유도제 (반감기 9–12h) — 다음날 숙취</option>
+      </select>
+    </div>
+
+  </div><!-- /panel-left -->
+
+  <!-- RIGHT PANEL: RESULTS -->
+  <div class="panel-right">
+
+    <div class="section-title">예측 결과 요약</div>
+    <div class="result-top">
+      <div class="result-card card-red">
+        <div class="rc-label">TOTAL PHASE DELAY</div>
+        <div class="rc-value" id="totalDelay">—</div>
+        <div class="rc-sub">총 수면 위상 지연량 (분)</div>
+      </div>
+      <div class="result-card card-amber">
+        <div class="rc-label">EST. SLEEP ONSET</div>
+        <div class="rc-value" id="sleepOnset">—</div>
+        <div class="rc-sub">예측 취침 시각</div>
+      </div>
+      <div class="result-card card-blue">
+        <div class="rc-label">CAFFEINE RESIDUE</div>
+        <div class="rc-value" id="cafResidueCard">—</div>
+        <div class="rc-sub">취침 시각 기준 혈중 잔류 (mg)</div>
+      </div>
+      <div class="result-card card-purple">
+        <div class="rc-label">SLEEP DEBT Σ</div>
+        <div class="rc-value" id="debtCard">—</div>
+        <div class="rc-sub">5일 누적 수면 부채 (분)</div>
+      </div>
+      <div class="result-card card-teal" style="grid-column: span 2;">
+        <div class="rc-label">R² ESTIMATE (MODEL)</div>
+        <div class="rc-value" id="r2Card">—</div>
+        <div class="rc-sub">통합 모형 설명력 — 세 변수 동시 투입 조정 R²</div>
+      </div>
+    </div>
+
+    <!-- REGRESSION BREAKDOWN -->
+    <div class="section-title">다중선형회귀 — 변수별 기여도 분해</div>
+    <div class="regression-table">
+      <div class="reg-head">
+        <div>독립변수</div>
+        <div style="text-align:right">입력값</div>
+        <div style="text-align:right">β·X (분)</div>
+        <div style="text-align:right">표준화β*</div>
+        <div style="text-align:right">유의성</div>
+      </div>
+      <div class="reg-row" id="row-bl">
+        <div class="reg-var-name" style="color:var(--accent-blue)">
+          블루라이트 노출
+          <div style="font-size:10px;color:var(--text-muted);font-weight:400;">X₁ · 멜라토닌 억제 기전</div>
+        </div>
+        <div class="reg-val" id="rv-bl">—</div>
+        <div class="reg-beta" style="color:var(--accent-blue)" id="rb-bl">—</div>
+        <div class="beta-bar-wrap" id="rbar-bl"><div class="beta-bar-bg"><div class="beta-bar-fill" style="background:var(--accent-blue);width:0%"></div></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-width:28px;text-align:right" id="rbs-bl">0.00</span></div>
+        <div><span class="sig-badge" id="rsig-bl">—</span></div>
+      </div>
+      <div class="reg-row" id="row-caf">
+        <div class="reg-var-name" style="color:var(--accent-amber)">
+          카페인 잔류 농도
+          <div style="font-size:10px;color:var(--text-muted);font-weight:400;">X₂ · 아데노신 길항 기전</div>
+        </div>
+        <div class="reg-val" id="rv-caf">—</div>
+        <div class="reg-beta" style="color:var(--accent-amber)" id="rb-caf">—</div>
+        <div class="beta-bar-wrap" id="rbar-caf"><div class="beta-bar-bg"><div class="beta-bar-fill" style="background:var(--accent-amber);width:0%"></div></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-width:28px;text-align:right" id="rbs-caf">0.00</span></div>
+        <div><span class="sig-badge" id="rsig-caf">—</span></div>
+      </div>
+      <div class="reg-row" id="row-debt">
+        <div class="reg-var-name" style="color:var(--accent-purple)">
+          수면 부채 누적량
+          <div style="font-size:10px;color:var(--text-muted);font-weight:400;">X₃ · MSFsc 수면 위상 보정</div>
+        </div>
+        <div class="reg-val" id="rv-debt">—</div>
+        <div class="reg-beta" style="color:var(--accent-purple)" id="rb-debt">—</div>
+        <div class="beta-bar-wrap" id="rbar-debt"><div class="beta-bar-bg"><div class="beta-bar-fill" style="background:var(--accent-purple);width:0%"></div></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-width:28px;text-align:right" id="rbs-debt">0.00</span></div>
+        <div><span class="sig-badge" id="rsig-debt">—</span></div>
+      </div>
+      <div class="reg-row">
+        <div class="reg-var-name" style="color:var(--text-secondary)">
+          크로노타입 기저
+          <div style="font-size:10px;color:var(--text-muted);font-weight:400;">공변량 · MEQ 보정값</div>
+        </div>
+        <div class="reg-val" id="rv-chrono">—</div>
+        <div class="reg-beta" style="color:var(--text-secondary)" id="rb-chrono">—</div>
+        <div class="beta-bar-wrap"><div class="beta-bar-bg"><div id="rbar-chrono-fill" class="beta-bar-fill" style="background:var(--text-secondary);width:0%"></div></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-width:28px;text-align:right" id="rbs-chrono">0.00</span></div>
+        <div><span class="sig-badge sig-no">공변량</span></div>
+      </div>
+    </div>
+
+    <!-- CLOCK + LEGEND -->
+    <div class="section-title">수면 위상 시계 — 24시간 시각화</div>
+    <div class="chart-wrap">
+      <div class="clock-container">
+        <div class="clock-wrap">
+          <canvas id="phaseClock" width="260" height="260"></canvas>
+        </div>
+        <div class="clock-legend">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6;">
+            수면 위상 시계는 24시간을 원형으로 나타내며, <span style="color:var(--accent-teal)">기준 취침·기상 구간</span>과
+            <span style="color:var(--accent-red)">위상 지연된 구간</span>을 비교합니다.
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent-teal);"></div>
+            <div class="legend-label">기준 취침 시각</div>
+            <div class="legend-time" id="lgBaseBed">—</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent-red);"></div>
+            <div class="legend-label">예측 취침 시각 (지연 후)</div>
+            <div class="legend-time" id="lgDelayBed">—</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(255,255,255,0.25);"></div>
+            <div class="legend-label">기준 기상 시각</div>
+            <div class="legend-time" id="lgBaseWake">—</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent-amber);"></div>
+            <div class="legend-label">예측 기상 시각</div>
+            <div class="legend-time" id="lgDelayWake">—</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent-amber);opacity:0.6"></div>
+            <div class="legend-label">멜라토닌 DLMO 추정</div>
+            <div class="legend-time" id="lgDLMO">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAFFEINE DECAY CHART -->
+    <div class="chart-wrap">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">카페인 혈중 농도 감쇠 곡선</div>
+          <div class="chart-sub">C(t) = C₀ × (½)<sup>t/5.5</sup> · 반감기 5.5h</div>
+        </div>
+      </div>
+      <div style="position:relative;width:100%;height:200px;">
+        <canvas id="cafDecayChart" role="img" aria-label="카페인 혈중 농도 감쇠 곡선">카페인 농도 변화 그래프</canvas>
+      </div>
+    </div>
+
+    <!-- CONTRIBUTION PIE CHART -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">변수별 지연 기여도</div>
+            <div class="chart-sub">β*ᵢ 표준화 계수 비율</div>
+          </div>
+        </div>
+        <div style="position:relative;width:100%;height:200px;">
+          <canvas id="contribChart" role="img" aria-label="변수별 수면 위상 지연 기여도 파이 차트">기여도 파이 차트</canvas>
+        </div>
+        <div id="contribLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:11px;"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">수면 단계별 손실 예측</div>
+            <div class="chart-sub">위상 지연이 수면 구조에 미치는 영향</div>
+          </div>
+        </div>
+        <div style="position:relative;width:100%;height:200px;">
+          <canvas id="sleepStageChart" role="img" aria-label="수면 단계별 손실 예측 막대 차트">수면 단계 막대 차트</canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERT BOX -->
+    <div id="alertBox" class="alert-box alert-info">
+      <span class="alert-icon">ℹ</span> 변수를 입력하면 수면 위상 분석이 업데이트됩니다.
+    </div>
+
+    <!-- REFERENCES -->
+    <div class="refs">
+      <h3>참고 문헌 · References</h3>
+      <div class="ref-item"><span class="ref-num">[1]</span><span>Roenneberg, T., Wirz-Justice, A., &amp; Merrow, M. (2003). A marker for the end of adolescence. <em>Current Biology, 13</em>(24), 2206–2209. — MSFsc 알고리즘, 사회적 시차 정량화 모델 기반 (이정욱)</span></div>
+      <div class="ref-item"><span class="ref-num">[2]</span><span>Drake, C. et al. (2013). Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed. <em>Journal of Clinical Sleep Medicine, 9</em>(11), 1195–1200. — 카페인 반감기 5.5h, 멜라토닌 분비 40분 지연 계수 산출 (유가빈)</span></div>
+      <div class="ref-item"><span class="ref-num">[3]</span><span>Czeisler, C. A. et al. (2006). High sensitivity of the human circadian melatonin rhythm to resetting by short wavelength light. <em>J. Clin. Endocrinol. Metab.</em> — ipRGC 청색광 446–477nm 민감도, 멜라토닌 억제 배율 모델 (홍서준)</span></div>
+      <div class="ref-item"><span class="ref-num">[4]</span><span>Buysse, D. J. et al. (1989). The Pittsburgh Sleep Quality Index. <em>Psychiatry Research, 28</em>(2), 193–213. — PSQI 수면 효율 가중치 산정 알고리즘 (이정욱)</span></div>
+      <div class="ref-item"><span class="ref-num">[5]</span><span>Wittmann, M. et al. (2006). Social jetlag: misalignment of biological and social time. <em>Chronobiology International, 23</em>(1–2), 497–509. — 사회적 시차증(Social Jetlag) 정의 및 크로노타입 공변량 처리 (전윤서)</span></div>
+      <div class="ref-item"><span class="ref-num">[6]</span><span>Walker, M. (2017). <em>Why We Sleep.</em> Scribner. — 렘수면 손실 vs N3 손실 비율 모델, 수면 단계별 구조 분석 (전윤서)</span></div>
+      <div class="ref-item"><span class="ref-num">[7]</span><span>Mitchell, R. (2018). <em>Web Scraping with Python.</em> O'Reilly Media. — 데이터 수집 파이프라인 설계 참조 (이정욱)</span></div>
+      <div class="ref-item"><span class="ref-num">[8]</span><span>Goldberger, A. L. et al. (2000). PhysioBank, PhysioToolkit, and PhysioNet. <em>Circulation, 101</em>(23), e215–e220. — 표준 수면 패턴 베이스라인 모델 참조 (이정욱)</span></div>
+      <div class="ref-item"><span class="ref-num">[9]</span><span>ULIF 내부 보고서 (2026): 유가빈 — 외부 물질과 수면의 상호작용 V2; 이정욱 — 데이터 파이프라인 구축; 홍서준 — 생리학적 변수 설정; 전윤서 — 수면 위상과 인지 기능</span></div>
+    </div>
+
+  </div><!-- /panel-right -->
+</div><!-- /main -->
+
+<script>
+/* ====================================================
+   DATA TABLES
+   ==================================================== */
+const CAFFEINE_ITEMS = [
+  { id: 'americano', name: '아메리카노',   mg: 125, icon: '☕', timeH: 3 },
+  { id: 'canned',    name: '캔 커피',       mg: 74,  icon: '🥫', timeH: 2 },
+  { id: 'energy',    name: '에너지드링크', mg: 80,  icon: '⚡', timeH: 2 },
+  { id: 'cola',      name: '콜라',          mg: 35,  icon: '🥤', timeH: 1 },
+  { id: 'greentea',  name: '녹차/홍차',     mg: 40,  icon: '🍵', timeH: 2 },
+  { id: 'choco',     name: '다크초콜릿',    mg: 20,  icon: '🍫', timeH: 1 },
+];
+const HALF_LIFE = 5.5;
+const BASE_BED_MIN = 23 * 60 + 0;  // 23:00 기준 취침 (분)
+const WAKE_DURATION = 7 * 60;       // 기상까지 7시간
+
+/* REGRESSION COEFFICIENTS (literature-derived, 고등학생 표본 기반)
+   β₁ (bluelight-adj) : 분당 ×(brightness) → 분 단위 지연
+   β₂ (caffeine residue mg) → 분 단위 지연
+   β₃ (sleep debt min) → 분 단위 지연
+   σ 표준화를 위한 참조 SD값 (선행연구 기반) */
+const BETA1 = 0.18;   // β₁: 조정된 블루라이트 노출(분) per 분 지연
+const BETA2 = 0.22;   // β₂: 카페인 잔류(mg) per 분 지연
+const BETA3 = 0.045;  // β₃: 수면 부채(분) per 분 지연
+const SD_BL  = 35;    // 참조 SD: 블루라이트 조정노출
+const SD_CAF = 60;    // 참조 SD: 카페인 잔류
+const SD_DEBT= 150;   // 참조 SD: 수면 부채
+
+/* ====================================================
+   STATE
+   ==================================================== */
+let state = {
+  bluelight: 60,
+  brightness: 70,
+  cafItems: {},  // id -> count
+  debtHours: [7, 6.5, 7, 6, 7],
+  chronoOffset: 0,
+  exercise: false,
+  sleepAid: 0,
+};
+
+let cafDecayChart = null;
+let contribChart = null;
+let sleepStageChart = null;
+
+/* ====================================================
+   BUILD UI
+   ==================================================== */
+function buildCafGrid() {
+  const grid = document.getElementById('caffeineGrid');
+  grid.innerHTML = '';
+  CAFFEINE_ITEMS.forEach(item => {
+    state.cafItems[item.id] = state.cafItems[item.id] || 0;
+    const div = document.createElement('div');
+    div.className = 'check-item' + (state.cafItems[item.id] > 0 ? ' active' : '');
+    div.id = 'ci-' + item.id;
+    div.innerHTML = `
+      <div class="item-info">
+        <div class="item-name">${item.icon} ${item.name}</div>
+        <div class="item-mg">${item.mg}mg / 컵</div>
+      </div>
+      <div class="item-count">
+        <button class="count-btn" onclick="changeCaf('${item.id}',-1);event.stopPropagation()">−</button>
+        <span class="count-num" id="cn-${item.id}">0</span>
+        <button class="count-btn" onclick="changeCaf('${item.id}',1);event.stopPropagation()">+</button>
+      </div>`;
+    div.onclick = () => { changeCaf(item.id, state.cafItems[item.id] > 0 ? -state.cafItems[item.id] : 1); };
+    grid.appendChild(div);
+  });
+}
+
+function buildDebtGrid() {
+  const grid = document.getElementById('debtGrid');
+  grid.innerHTML = '';
+  ['D-5','D-4','D-3','D-2','D-1'].forEach((label, i) => {
+    const div = document.createElement('div');
+    div.className = 'debt-day';
+    div.innerHTML = `<span class="day-label">${label}</span>
+      <input type="number" min="0" max="12" step="0.5" value="${state.debtHours[i]}"
+        oninput="state.debtHours[${i}]=parseFloat(this.value)||0; updateDebtBars(); update()">
+      <div class="debt-bar-container">
+        <div class="debt-bar" id="db-${i}" style="height:0%"></div>
+      </div>`;
+    grid.appendChild(div);
+  });
+  updateDebtBars();
+}
+
+function updateDebtBars() {
+  state.debtHours.forEach((h, i) => {
+    const deficit = Math.max(0, 8 - h);
+    const pct = Math.min(100, (deficit / 3) * 100);
+    const bar = document.getElementById('db-' + i);
+    if (bar) bar.style.height = pct + '%';
+  });
+}
+
+/* ====================================================
+   EVENT HANDLERS
+   ==================================================== */
+function selectChrono(el, val) {
+  document.querySelectorAll('.chrono-btn').forEach(b => {
+    if (!b.dataset.chrono) return;
+    b.classList.remove('active');
+  });
+  el.classList.add('active');
+  state.chronoOffset = val;
+  document.getElementById('chronoBase').textContent = (val >= 0 ? '+' : '') + val + '분';
+  update();
+}
+
+function setExercise(val, el) {
+  state.exercise = val;
+  document.getElementById('ex-yes').classList.toggle('active', val);
+  document.getElementById('ex-no').classList.toggle('active', !val);
+  update();
+}
+
+function changeCaf(id, delta) {
+  state.cafItems[id] = Math.max(0, (state.cafItems[id] || 0) + delta);
+  document.getElementById('cn-' + id).textContent = state.cafItems[id];
+  document.getElementById('ci-' + id).classList.toggle('active', state.cafItems[id] > 0);
+  update();
+}
+
+/* ====================================================
+   CORE CALCULATIONS
+   ==================================================== */
+function calcCaffeineResidue(bedTimeH) {
+  let total = 0;
+  CAFFEINE_ITEMS.forEach(item => {
+    const cnt = state.cafItems[item.id] || 0;
+    if (cnt === 0) return;
+    const c0 = cnt * item.mg;
+    const elapsed = bedTimeH - (18 + item.timeH);
+    const t = Math.max(0, elapsed);
+    total += c0 * Math.pow(0.5, t / HALF_LIFE);
+  });
+  return total;
+}
+
+function calcTotalCaffeineC0() {
+  let total = 0;
+  CAFFEINE_ITEMS.forEach(item => {
+    total += (state.cafItems[item.id] || 0) * item.mg;
+  });
+  return total;
+}
+
+function calcSleepDebt() {
+  return state.debtHours.reduce((sum, h) => sum + Math.max(0, 8 - h) * 60, 0);
+}
+
+function minutesToTimeStr(totalMin) {
+  let m = ((totalMin % 1440) + 1440) % 1440;
+  const h = Math.floor(m / 60) % 24;
+  const min = Math.floor(m % 60);
+  return String(h).padStart(2,'0') + ':' + String(min).padStart(2,'0');
+}
+
+function calcModel() {
+  const bl = state.bluelight;
+  const br = state.brightness / 100;
+  const blAdj = bl * (0.4 + 0.8 * br);  // 밝기 보정: 40%~120%
+
+  // 이전 취침 추정 → 카페인 잔류 계산
+  const roughBedH = (BASE_BED_MIN / 60) + (state.chronoOffset / 60);
+  const cafResidue = calcCaffeineResidue(roughBedH);
+
+  const debt = calcSleepDebt();
+  const sleepAidEffect = parseInt(document.getElementById('sleepAid').value) || 0;
+  const exerciseEffect = state.exercise ? -15 : 0;
+
+  // REGRESSION MODEL
+  const dBL   = BETA1 * blAdj;
+  const dCAF  = BETA2 * cafResidue;
+  const dDEBT = BETA3 * debt;
+  const dChrono = state.chronoOffset;
+
+  const totalDelay = dBL + dCAF + dDEBT + dChrono + sleepAidEffect + exerciseEffect;
+  const bedTimeMin = BASE_BED_MIN + totalDelay;
+  const wakeTimeMin = bedTimeMin + WAKE_DURATION;
+
+  // STANDARDIZED BETAS
+  const bs1 = (BETA1 * SD_BL) / 40;
+  const bs2 = (BETA2 * SD_CAF) / 40;
+  const bs3 = (BETA3 * SD_DEBT) / 40;
+
+  // R² estimate: based on explained variance ratio
+  const explainedByModel = dBL + dCAF + dDEBT;
+  const maxPossible = BETA1 * 120 * 1.2 + BETA2 * 500 + BETA3 * 2400;
+  const r2 = Math.min(0.82, Math.max(0.08, 0.3 + 0.52 * (explainedByModel / maxPossible)));
+
+  // SIGNIFICANCE
+  const sig1 = blAdj > 10;
+  const sig2 = cafResidue > 15;
+  const sig3 = debt > 60;
+
+  return {
+    blAdj, cafResidue, debt, totalDelay,
+    dBL, dCAF, dDEBT, dChrono,
+    bedTimeMin, wakeTimeMin,
+    bs1, bs2, bs3,
+    r2, sig1, sig2, sig3, sleepAidEffect, exerciseEffect
+  };
+}
+
+/* ====================================================
+   UPDATE UI
+   ==================================================== */
+function update() {
+  state.bluelight  = parseInt(document.getElementById('bluelight').value);
+  state.brightness = parseInt(document.getElementById('brightness').value);
+  state.sleepAid   = parseInt(document.getElementById('sleepAid').value) || 0;
+
+  document.getElementById('bl-val').textContent = state.bluelight + '분';
+  document.getElementById('br-val').textContent = state.brightness + '%';
+
+  const c = calcModel();
+
+  // TOP CARDS
+  const delayEl = document.getElementById('totalDelay');
+  delayEl.textContent = (c.totalDelay >= 0 ? '+' : '') + Math.round(c.totalDelay) + '분';
+  delayEl.style.color = c.totalDelay > 90 ? 'var(--accent-red)' : c.totalDelay > 30 ? 'var(--accent-amber)' : 'var(--accent-green)';
+
+  document.getElementById('sleepOnset').textContent   = minutesToTimeStr(c.bedTimeMin);
+  document.getElementById('cafResidueCard').textContent = Math.round(c.cafResidue) + 'mg';
+  document.getElementById('debtCard').textContent      = Math.round(c.debt) + '분';
+  document.getElementById('r2Card').textContent        = c.r2.toFixed(3);
+  document.getElementById('totalDebt').textContent     = Math.round(c.debt) + '분';
+  document.getElementById('cafRemain').textContent     = Math.round(c.cafResidue);
+
+  // REGRESSION TABLE
+  document.getElementById('rv-bl').textContent   = Math.round(c.blAdj) + '분';
+  document.getElementById('rb-bl').textContent   = '+' + Math.round(c.dBL) + '분';
+  document.getElementById('rv-caf').textContent  = Math.round(c.cafResidue) + 'mg';
+  document.getElementById('rb-caf').textContent  = '+' + Math.round(c.dCAF) + '분';
+  document.getElementById('rv-debt').textContent = Math.round(c.debt) + '분';
+  document.getElementById('rb-debt').textContent = '+' + Math.round(c.dDEBT) + '분';
+  document.getElementById('rv-chrono').textContent = (c.dChrono >= 0 ? '+' : '') + Math.round(c.dChrono) + '분';
+  document.getElementById('rb-chrono').textContent = (c.dChrono >= 0 ? '+' : '') + Math.round(c.dChrono) + '분';
+
+  // BETA BARS
+  const maxBeta = Math.max(c.bs1, c.bs2, c.bs3, 0.01);
+  const setBetaBar = (id, val, maxV) => {
+    const pct = Math.round(Math.min(100, (val / maxV) * 100));
+    const fill = document.querySelector('#rbar-' + id + ' .beta-bar-fill');
+    const num  = document.getElementById('rbs-' + id);
+    if (fill) fill.style.width = pct + '%';
+    if (num)  num.textContent  = val.toFixed(2);
+  };
+  setBetaBar('bl',  c.bs1, maxBeta);
+  setBetaBar('caf', c.bs2, maxBeta);
+  setBetaBar('debt',c.bs3, maxBeta);
+  const chronoBs = Math.abs(c.dChrono) / 90 * 0.5;
+  document.getElementById('rbar-chrono-fill').style.width = Math.round((chronoBs / maxBeta) * 100) + '%';
+  document.getElementById('rbs-chrono').textContent = chronoBs.toFixed(2);
+
+  // SIGNIFICANCE BADGES
+  const setSig = (id, sig) => {
+    const el = document.getElementById('rsig-' + id);
+    el.className = 'sig-badge ' + (sig ? 'sig-yes' : 'sig-no');
+    el.textContent = sig ? 'p<0.05' : 'n.s.';
+  };
+  setSig('bl', c.sig1);
+  setSig('caf', c.sig2);
+  setSig('debt', c.sig3);
+
+  // LEGENDS
+  const baseBed  = BASE_BED_MIN;
+  const dlmo     = baseBed - 120 + Math.round(c.totalDelay * 0.7);
+  document.getElementById('lgBaseBed').textContent   = minutesToTimeStr(baseBed);
+  document.getElementById('lgDelayBed').textContent  = minutesToTimeStr(c.bedTimeMin);
+  document.getElementById('lgBaseWake').textContent  = minutesToTimeStr(baseBed + WAKE_DURATION);
+  document.getElementById('lgDelayWake').textContent = minutesToTimeStr(c.wakeTimeMin);
+  document.getElementById('lgDLMO').textContent      = minutesToTimeStr(dlmo);
+
+  // ALERT BOX
+  updateAlert(c);
+
+  // CHARTS
+  drawClock(c);
+  updateCafDecayChart(c);
+  updateContribChart(c);
+  updateSleepStageChart(c);
+}
+
+function updateAlert(c) {
+  const box = document.getElementById('alertBox');
+  if (c.totalDelay > 120) {
+    box.className = 'alert-box alert-warn';
+    box.innerHTML = `<span class="alert-icon">⚠</span> <strong>심각한 수면 위상 지연 예측 (+${Math.round(c.totalDelay)}분).</strong> 블루라이트·카페인·수면 부채가 복합적으로 작용 중입니다. 개입이 필요합니다.`;
+  } else if (c.totalDelay > 50) {
+    box.className = 'alert-box alert-warn';
+    box.innerHTML = `<span class="alert-icon">⚠</span> 중등도 수면 위상 지연 (+${Math.round(c.totalDelay)}분). 가장 큰 기여 변수: <strong>${getDominantVar(c)}</strong>에 집중적으로 개입하세요.`;
+  } else if (c.totalDelay < 0) {
+    box.className = 'alert-box alert-ok';
+    box.innerHTML = `<span class="alert-icon">✓</span> 수면 위상이 기준보다 앞당겨진 상태 (${Math.round(c.totalDelay)}분). 좋은 수면 위생을 유지하고 있습니다.`;
+  } else {
+    box.className = 'alert-box alert-info';
+    box.innerHTML = `<span class="alert-icon">ℹ</span> 경미한 수면 위상 지연 (+${Math.round(c.totalDelay)}분). 지속 모니터링을 권장합니다. 모형 설명력 R² = ${c.r2.toFixed(3)}.`;
+  }
+}
+
+function getDominantVar(c) {
+  const map = [['블루라이트 노출', c.dBL], ['카페인 잔류', c.dCAF], ['수면 부채', c.dDEBT]];
+  return map.reduce((a, b) => b[1] > a[1] ? b : a)[0];
+}
+
+/* ====================================================
+   CLOCK CANVAS
+   ==================================================== */
+function drawClock(c) {
+  const canvas = document.getElementById('phaseClock');
+  const ctx = canvas.getContext('2d');
+  const W = 260, H = 260, cx = 130, cy = 130, R = 110;
+  ctx.clearRect(0, 0, W, H);
+
+  const isDark = true;
+  const bg = '#0f111a';
+  const ring = 'rgba(255,255,255,0.06)';
+
+  // Background ring
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.fillStyle = ring; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, R - 24, 0, Math.PI*2);
+  ctx.fillStyle = bg; ctx.fill();
+
+  // Hour marks
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2 - Math.PI / 2;
+    const r1 = i % 6 === 0 ? R - 4 : R - 8;
+    const r2 = R;
+    ctx.beginPath();
+    ctx.moveTo(cx + r1*Math.cos(a), cy + r1*Math.sin(a));
+    ctx.lineTo(cx + r2*Math.cos(a), cy + r2*Math.sin(a));
+    ctx.strokeStyle = i % 6 === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = i % 6 === 0 ? 2 : 1;
+    ctx.stroke();
+    if (i % 6 === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '10px IBM Plex Mono';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const labels = ['12','6','12','18'];
+      const lr = R - 16;
+      ctx.fillText(labels[i/6], cx + lr*Math.cos(a), cy + lr*Math.sin(a));
+    }
+  }
+
+  // Night zone (21:00–06:00) background
+  const nightStart = timeToAngle(21 * 60);
+  const nightEnd   = timeToAngle(6 * 60);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, R - 24, nightStart, nightEnd);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(79,163,224,0.05)';
+  ctx.fill();
+
+  // BASE sleep arc (teal)
+  const baseBedA  = timeToAngle(BASE_BED_MIN);
+  const baseWakeA = timeToAngle(BASE_BED_MIN + WAKE_DURATION);
+  drawArc(ctx, cx, cy, R-26, baseBedA, baseWakeA, 'rgba(45,212,191,0.25)', 16);
+
+  // DELAYED sleep arc (red)
+  const delayBedA  = timeToAngle(c.bedTimeMin);
+  const delayWakeA = timeToAngle(c.wakeTimeMin);
+  drawArc(ctx, cx, cy, R-26, delayBedA, delayWakeA, 'rgba(248,113,113,0.35)', 16);
+
+  // DLMO marker
+  const dlmo = BASE_BED_MIN - 120 + c.totalDelay * 0.7;
+  drawMarker(ctx, cx, cy, R - 18, timeToAngle(dlmo), 'rgba(245,158,11,0.9)', 5);
+
+  // Bed / Wake markers
+  drawMarker(ctx, cx, cy, R - 26, baseBedA,  'rgba(45,212,191,0.9)', 4);
+  drawMarker(ctx, cx, cy, R - 26, delayBedA, 'rgba(248,113,113,1.0)', 5);
+  drawMarker(ctx, cx, cy, R - 26, delayWakeA,'rgba(245,158,11,1.0)', 4);
+
+  // CENTER TEXT
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '500 20px IBM Plex Mono';
+  ctx.fillStyle = c.totalDelay > 90 ? '#f87171' : c.totalDelay > 30 ? '#f59e0b' : '#6ee7b7';
+  ctx.fillText((c.totalDelay >= 0 ? '+' : '') + Math.round(c.totalDelay), cx, cy - 6);
+  ctx.font = '400 11px Noto Sans KR';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillText('분 지연', cx, cy + 14);
+}
+
+function timeToAngle(min) {
+  return (min / (24 * 60)) * Math.PI * 2 - Math.PI / 2;
+}
+
+function drawArc(ctx, cx, cy, r, startA, endA, color, width) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startA, endA > startA ? endA : endA + Math.PI*2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+function drawMarker(ctx, cx, cy, r, angle, color, size) {
+  ctx.beginPath();
+  ctx.arc(cx + r * Math.cos(angle), cy + r * Math.sin(angle), size, 0, Math.PI*2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+/* ====================================================
+   CAFFEINE DECAY CHART
+   ==================================================== */
+function updateCafDecayChart(c) {
+  const totalC0 = calcTotalCaffeineC0();
+  const bedH = c.bedTimeMin / 60;
+  const labels = [];
+  const data = [];
+
+  for (let t = 0; t <= 18; t += 0.5) {
+    const h = 18 + t;
+    const elapsed = Math.max(0, bedH - 18);
+    const residue = totalC0 > 0 ? totalC0 * Math.pow(0.5, t / HALF_LIFE) : 0;
+    labels.push(Math.round(18 + t) % 24 + ':00');
+    data.push(parseFloat(residue.toFixed(1)));
+  }
+
+  const bedIdx = Math.round((bedH - 18) * 2);
+  const residueAtBed = totalC0 > 0 ? parseFloat((totalC0 * Math.pow(0.5, Math.max(0, bedH - 18) / HALF_LIFE)).toFixed(1)) : 0;
+
+  if (!cafDecayChart) {
+    cafDecayChart = new Chart(document.getElementById('cafDecayChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: '혈중 카페인 (mg)',
+          data,
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.07)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.4,
+        }, {
+          label: '취침 시각 잔류',
+          data: data.map((v, i) => i === bedIdx ? v : null),
+          pointBackgroundColor: '#f87171',
+          pointRadius: 7,
+          pointHoverRadius: 9,
+          borderWidth: 0,
+          showLine: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => ctx.parsed.y + ' mg' }
+        }},
+        scales: {
+          x: {
+            ticks: { color: '#4a5266', font: { family: 'IBM Plex Mono', size: 10 }, maxRotation: 0,
+              callback: (v, i) => i % 4 === 0 ? labels[i] : '' },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+          },
+          y: {
+            ticks: { color: '#4a5266', font: { family: 'IBM Plex Mono', size: 10 } },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            min: 0,
+          }
+        }
+      }
+    });
+  } else {
+    cafDecayChart.data.labels = labels;
+    cafDecayChart.data.datasets[0].data = data;
+    cafDecayChart.data.datasets[1].data = data.map((v, i) => i === Math.max(0, Math.min(labels.length-1, bedIdx)) ? v : null);
+    cafDecayChart.update('none');
+  }
+}
+
+/* ====================================================
+   CONTRIBUTION PIE CHART
+   ==================================================== */
+function updateContribChart(c) {
+  const vals = [Math.abs(c.dBL), Math.abs(c.dCAF), Math.abs(c.dDEBT), Math.abs(c.dChrono)].map(v => Math.max(0.01, v));
+  const labels = ['블루라이트', '카페인', '수면부채', '크로노타입'];
+  const colors = ['#4fa3e0', '#f59e0b', '#a78bfa', '#4a5266'];
+
+  if (!contribChart) {
+    contribChart = new Chart(document.getElementById('contribChart'), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '68%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const sum = ctx.dataset.data.reduce((a,b) => a+b, 0);
+                return labels[ctx.dataIndex] + ': ' + Math.round(ctx.parsed) + '분 (' + Math.round(ctx.parsed / sum * 100) + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+  } else {
+    contribChart.data.datasets[0].data = vals;
+    contribChart.update('none');
+  }
+
+  const legend = document.getElementById('contribLegend');
+  const total = vals.reduce((a,b) => a+b, 0);
+  legend.innerHTML = vals.map((v, i) => `
+    <span style="display:flex;align-items:center;gap:4px;">
+      <span style="width:8px;height:8px;border-radius:2px;background:${colors[i]};display:inline-block;"></span>
+      <span style="color:var(--text-secondary);">${labels[i]}</span>
+      <span style="font-family:var(--font-mono);color:var(--text-primary);">${Math.round(v/total*100)}%</span>
+    </span>`).join('');
+}
+
+/* ====================================================
+   SLEEP STAGE CHART
+   ==================================================== */
+function updateSleepStageChart(c) {
+  // Based on Walker (2017) & Roenneberg MCTQ:
+  // Delayed sleep → later wake → REM loss proportionally more than N3
+  const delayH = c.totalDelay / 60;
+  const totalSleepH = WAKE_DURATION / 60 - Math.max(0, delayH * 0.3);
+  const n3Normal    = totalSleepH * 0.175;
+  const remNormal   = totalSleepH * 0.22;
+  const n2Normal    = totalSleepH * 0.50;
+  const n3Delayed   = Math.max(0, n3Normal  - delayH * 0.08);
+  const remDelayed  = Math.max(0, remNormal - delayH * 0.12);
+  const n2Delayed   = Math.max(0, n2Normal  - delayH * 0.05);
+
+  const stages = ['N1 (입면)', 'N2 (중간)', 'N3 (깊은)', 'REM'];
+  const norm  = [0.05, n2Normal, n3Normal, remNormal].map(v => parseFloat((v * 60).toFixed(0)));
+  const delay = [0.05, n2Delayed, n3Delayed, remDelayed].map(v => parseFloat((v * 60).toFixed(0)));
+
+  if (!sleepStageChart) {
+    sleepStageChart = new Chart(document.getElementById('sleepStageChart'), {
+      type: 'bar',
+      data: {
+        labels: stages,
+        datasets: [
+          { label: '기준 (분)', data: norm,  backgroundColor: 'rgba(45,212,191,0.4)', borderColor: '#2dd4bf', borderWidth: 1 },
+          { label: '지연 후 예측 (분)', data: delay, backgroundColor: 'rgba(248,113,113,0.4)', borderColor: '#f87171', borderWidth: 1 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, labels: { color: '#8a93ad', font: { family: 'IBM Plex Mono', size: 10 }, boxWidth: 10, usePointStyle: false } }
+        },
+        scales: {
+          x: { ticks: { color: '#4a5266', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#4a5266', font: { family: 'IBM Plex Mono', size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 0,
+               title: { display: true, text: '분', color: '#4a5266', font: { size: 10 } } }
+        }
+      }
+    });
+  } else {
+    sleepStageChart.data.datasets[0].data = norm;
+    sleepStageChart.data.datasets[1].data = delay;
+    sleepStageChart.update('none');
+  }
+}
+
+/* ====================================================
+   INIT
+   ==================================================== */
+buildCafGrid();
+buildDebtGrid();
+update();
+</script>
+</body>
+</html>

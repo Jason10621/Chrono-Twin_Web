@@ -37,15 +37,18 @@ export default function RootLayout({
       <body className="min-h-screen">
         <header className="nav-blur fixed inset-x-0 top-0 z-50">
           <div className="mx-auto flex h-[52px] max-w-6xl items-center justify-between px-5 md:px-8">
-            <a href="#top" className="text-[19px] font-semibold tracking-tight">
+            <a href="/" className="text-[19px] font-semibold tracking-tight">
               Chrono-Twin
             </a>
             <nav className="flex items-center gap-2 sm:gap-6">
-              <a href="#analyze" className="nav-link hidden sm:inline">
+              <a href="/#analyze" className="nav-link hidden sm:inline">
                 분석
               </a>
-              <a href="#coach" className="nav-link hidden sm:inline">
+              <a href="/#coach" className="nav-link hidden sm:inline">
                 AI 코치
+              </a>
+              <a href="/about" className="nav-link">
+                About
               </a>
               <a href="/dashboard.html" target="_blank" rel="noopener noreferrer" className="nav-link">
                 대시보드

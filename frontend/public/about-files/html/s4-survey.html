@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>카페인·수면·디지털 습관 설문조사</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e2a;
+    --surface: #1f2435;
+    --surface2: #252a3a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf2;
+    --text2: #9195a8;
+    --text3: #5c6175;
+    --accent: #7c8ff5;
+    --accent2: #5b6de0;
+    --accent-glow: rgba(124,143,245,0.18);
+    --teal: #4ecdc4;
+    --teal-glow: rgba(78,205,196,0.15);
+    --amber: #f5a623;
+    --amber-glow: rgba(245,166,35,0.15);
+    --red: #f06060;
+    --green: #52d48a;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Pretendard', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND DECORATION ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,143,245,0.06) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(78,205,196,0.05) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── LAYOUT ── */
+  .shell {
+    position: relative; z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* ── STICKY PROGRESS BAR ── */
+  .progress-bar-wrap {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.05);
+    z-index: 100;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--teal));
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+
+  /* ── HEADER ── */
+  .hero {
+    padding: 80px 0 60px;
+    text-align: center;
+  }
+  .hero-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,143,245,0.2);
+    padding: 5px 14px;
+    border-radius: 100px;
+    margin-bottom: 28px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .hero p {
+    font-size: 15px;
+    color: var(--text2);
+    max-width: 520px;
+    margin: 0 auto 36px;
+    line-height: 1.8;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 100px;
+  }
+  .stat-chip .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+  }
+
+  /* ── FLOATING PROGRESS INDICATOR ── */
+  .floating-counter {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 100px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: var(--transition);
+  }
+  .floating-counter .fc-num {
+    font-size: 16px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .floating-counter .fc-bar {
+    width: 60px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .floating-counter .fc-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--teal));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── SECTION DIVIDER ── */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 52px 0 28px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .section-divider.visible { opacity: 1; transform: translateY(0); }
+  .section-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-divider-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+  .section-divider-badge .badge-icon {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  .badge-icon.s1 { background: rgba(124,143,245,0.15); }
+  .badge-icon.s2 { background: rgba(78,205,196,0.12); }
+  .badge-icon.s3 { background: rgba(245,166,35,0.12); }
+  .badge-icon.s4 { background: rgba(240,96,96,0.12); }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 28px 24px;
+    margin-bottom: 14px;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.45s ease, transform 0.45s ease,
+                border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .q-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--border2);
+    transition: background 0.3s ease;
+  }
+  .q-card.visible { opacity: 1; transform: translateY(0); }
+  .q-card.answered { border-color: rgba(124,143,245,0.2); }
+  .q-card.answered::before { background: var(--accent); }
+  .q-card.answered { box-shadow: 0 0 0 1px rgba(124,143,245,0.06); }
+
+  .q-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .q-num-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,143,245,0.15);
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+  .q-tag {
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 2px 9px;
+    border-radius: 100px;
+  }
+  .q-answered-check {
+    margin-left: auto;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(82,212,138,0.15);
+    border: 1px solid rgba(82,212,138,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--green);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .q-card.answered .q-answered-check { opacity: 1; transform: scale(1); }
+
+  .q-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.6;
+  }
+  .q-hint {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 16px;
+    font-style: italic;
+  }
+
+  /* ── OPTIONS ── */
+  .options { display: flex; flex-direction: column; gap: 7px; }
+
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color var(--transition), background var(--transition);
+    width: 100%;
+    text-align: left;
+  }
+  .opt:hover {
+    border-color: var(--border2);
+    background: var(--bg3);
+  }
+  .opt.selected {
+    border-color: rgba(124,143,245,0.45);
+    background: rgba(124,143,245,0.07);
+  }
+  .opt-circle {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    transition: border-color var(--transition), background var(--transition), color var(--transition);
+  }
+  .opt.selected .opt-circle {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .opt-text {
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.55;
+    transition: color var(--transition);
+  }
+  .opt.selected .opt-text { color: var(--text); }
+
+  /* Scale labels for Likert questions */
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding: 0 2px;
+  }
+  .scale-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.02em;
+  }
+
+  /* ── SUBMIT SECTION ── */
+  .submit-wrap {
+    padding: 40px 0 20px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s;
+  }
+  .submit-wrap.visible { opacity: 1; transform: translateY(0); }
+
+  .submit-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+  }
+  .submit-progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .submit-progress-text {
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .submit-progress-text strong { color: var(--text); }
+  .submit-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    overflow: hidden;
+    max-width: 200px;
+  }
+  .submit-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--teal));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .incomplete-note {
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 18px;
+    min-height: 18px;
+  }
+
+  .btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--accent2), #6b82f0);
+    color: #fff;
+    font-family: 'Pretendard', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(91,109,224,0.35);
+    letter-spacing: 0.02em;
+  }
+  .btn-submit:hover:not(:disabled) {
+    opacity: 0.92;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(91,109,224,0.45);
+  }
+  .btn-submit:active:not(:disabled) { transform: translateY(0); }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-submit .arrow { font-size: 18px; transition: transform 0.2s; }
+  .btn-submit:hover:not(:disabled) .arrow { transform: translateX(4px); }
+
+  /* ── RESULTS PAGE ── */
+  #results-page {
+    display: none;
+    padding: 60px 0 80px;
+  }
+  #results-page.show { display: block; }
+
+  .results-hero {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+  .results-hero .check-circle {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: rgba(82,212,138,0.12);
+    border: 1.5px solid rgba(82,212,138,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 20px;
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .results-hero h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    margin-bottom: 10px;
+  }
+  .results-hero p { font-size: 14px; color: var(--text2); }
+
+  /* ── RESULT SECTION BLOCK ── */
+  .result-section {
+    margin-bottom: 32px;
+  }
+  .result-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    animation: slideUp 0.4s ease both;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result-q-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 28px;
+    padding-top: 2px;
+  }
+  .result-content { flex: 1; }
+  .result-q-text {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+  .result-answer {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .result-answer-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,143,245,0.2);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-right: 7px;
+    flex-shrink: 0;
+  }
+
+  /* ── INSIGHT CARD ── */
+  .insight-box {
+    background: linear-gradient(135deg, rgba(124,143,245,0.08), rgba(78,205,196,0.05));
+    border: 1px solid rgba(124,143,245,0.15);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin: 32px 0;
+  }
+  .insight-box h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .insight-list { list-style: none; }
+  .insight-list li {
+    font-size: 13.5px;
+    color: var(--text2);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.6;
+  }
+  .insight-list li:last-child { border-bottom: none; }
+  .insight-list li::before {
+    content: '→';
+    color: var(--teal);
+    font-size: 12px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── SCORE BADGES ── */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    text-align: center;
+  }
+  .score-card .s-label {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+  }
+  .score-card .s-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .score-card .s-sub { font-size: 11px; color: var(--text3); }
+  .s-value.low { color: var(--green); }
+  .s-value.mid { color: var(--amber); }
+  .s-value.high { color: var(--red); }
+
+  /* ── RESET BUTTON ── */
+  .btn-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Pretendard', sans-serif;
+    font-size: 13px;
+    padding: 10px 20px;
+    border: 1px solid var(--border2);
+    border-radius: 100px;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 16px;
+  }
+  .btn-reset:hover { color: var(--text); border-color: var(--border2); background: var(--bg3); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero { animation: fadeUp 0.6s ease both; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    .shell { padding: 0 14px 60px; }
+    .q-card { padding: 20px 18px 18px; }
+    .hero { padding: 60px 0 40px; }
+    .floating-counter { bottom: 16px; right: 16px; padding: 8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="topBar"></div>
+</div>
+
+<div class="floating-counter" id="floatCounter">
+  <span class="fc-num" id="fcNum">0</span>
+  <span style="font-size:12px;color:var(--text3)">/</span>
+  <span style="font-size:12px;color:var(--text3)">19</span>
+  <div class="fc-bar"><div class="fc-fill" id="fcFill"></div></div>
+</div>
+
+<div class="shell">
+
+  <!-- SURVEY PAGE -->
+  <div id="survey-page">
+    <div class="hero">
+      <div class="hero-label">✦ 수면·카페인·디지털 습관 연구</div>
+      <h1>당신의 <em>수면 패턴</em>과<br>카페인 습관을 분석합니다</h1>
+      <p>19개 문항으로 구성된 설문입니다. 솔직하게 응답할수록 더 정확한 분석 결과를 받으실 수 있습니다.</p>
+      <div class="stats-row">
+        <div class="stat-chip"><span class="dot"></span>총 19문항</div>
+        <div class="stat-chip"><span class="dot" style="background:var(--amber)"></span>소요 3~5분</div>
+        <div class="stat-chip"><span class="dot" style="background:var(--accent)"></span>익명 처리</div>
+      </div>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="section-divider" data-section>
+      <div class="section-divider-line"></div>
+      <div class="section-divider-badge">
+        <div class="badge-icon s1">☕</div>
+        섹션 1 · 카페인 섭취 및 신체 반응
+      </div>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="q-card" data-q="1">
+      <div class="q-meta">
+        <span class="q-num-badge">Q1</span>
+        <span class="q-tag">수면 영향</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">카페인을 섭취한 날, 수면에 미치는 영향(입면 지연, 수면 중 깨는 현상 등)을 얼마나 느끼시나요?</div>
+      <div class="options">
+        <button class="opt" data-q="1" data-v="1"><span class="opt-circle">①</span><span class="opt-text">전혀 느끼지 않는다 — 수면에 아무 영향 없음</span></button>
+        <button class="opt" data-q="1" data-v="2"><span class="opt-circle">②</span><span class="opt-text">거의 느끼지 않는다 — 가끔 미세하게 영향받는 느낌</span></button>
+        <button class="opt" data-q="1" data-v="3"><span class="opt-circle">③</span><span class="opt-text">약간 느낀다 — 간혹 잠들기 시간이 길어지는 정도</span></button>
+        <button class="opt" data-q="1" data-v="4"><span class="opt-circle">④</span><span class="opt-text">어느 정도 느낀다 — 잠들기 어렵거나 수면 중 자주 깸</span></button>
+        <button class="opt" data-q="1" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">매우 심하게 느낀다 — 수면을 심각하게 망칠 정도</span></button>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card" data-q="2">
+      <div class="q-meta">
+        <span class="q-num-badge">Q2</span>
+        <span class="q-tag">심박수 반응</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">카페인 섭취 후 심장 두근거림이나 심박수 증가를 어느 정도로 체감하시나요?</div>
+      <div class="options">
+        <button class="opt" data-q="2" data-v="1"><span class="opt-circle">①</span><span class="opt-text">전혀 변화 없음</span></button>
+        <button class="opt" data-q="2" data-v="2"><span class="opt-circle">②</span><span class="opt-text">미세하게 증가하는 느낌 (신경 쓰이지 않는 수준)</span></button>
+        <button class="opt" data-q="2" data-v="3"><span class="opt-circle">③</span><span class="opt-text">약간의 두근거림을 느낌 (일시적으로 인식되는 수준)</span></button>
+        <button class="opt" data-q="2" data-v="4"><span class="opt-circle">④</span><span class="opt-text">뚜렷하게 두근거림을 느낌 (신경 쓰일 정도)</span></button>
+        <button class="opt" data-q="2" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">매우 빠르고 강하게 뜀 (불편함·불안감을 느낄 정도)</span></button>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card" data-q="3">
+      <div class="q-meta">
+        <span class="q-num-badge">Q3</span>
+        <span class="q-tag">각성 효과</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">카페인 섭취 후 피로 해소·졸음 방지 등의 각성 효과를 실제로 얼마나 체감하시나요?</div>
+      <div class="options">
+        <button class="opt" data-q="3" data-v="1"><span class="opt-circle">①</span><span class="opt-text">전혀 효과가 없다 — 섭취 전후 차이를 느끼지 못함</span></button>
+        <button class="opt" data-q="3" data-v="2"><span class="opt-circle">②</span><span class="opt-text">거의 효과가 없다 — 기분 탓인지 모를 정도로 미미함</span></button>
+        <button class="opt" data-q="3" data-v="3"><span class="opt-circle">③</span><span class="opt-text">일시적인 효과가 있다 — 30분~1시간 내 효과가 사라짐</span></button>
+        <button class="opt" data-q="3" data-v="4"><span class="opt-circle">④</span><span class="opt-text">확실히 효과가 있다 — 섭취 후 수시간 각성 상태 유지</span></button>
+        <button class="opt" data-q="3" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">매우 큰 효과가 있다 — 카페인 없이는 집중 자체가 어려움</span></button>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card" data-q="4">
+      <div class="q-meta">
+        <span class="q-num-badge">Q4</span>
+        <span class="q-tag">섭취량</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">하루 평균 카페인 총 섭취량은 어느 정도인가요?</div>
+      <div class="q-hint">기준: 아메리카노 1잔 ≈ 150mg / 에너지 드링크 1캔 ≈ 80~150mg / 녹차 1잔 ≈ 30mg</div>
+      <div class="options">
+        <button class="opt" data-q="4" data-v="1"><span class="opt-circle">①</span><span class="opt-text">섭취하지 않음 (0 mg)</span></button>
+        <button class="opt" data-q="4" data-v="2"><span class="opt-circle">②</span><span class="opt-text">소량 (1~100 mg) — 녹차·콜라 1캔 수준</span></button>
+        <button class="opt" data-q="4" data-v="3"><span class="opt-circle">③</span><span class="opt-text">중간 (100~300 mg) — 아메리카노 1~2잔 수준</span></button>
+        <button class="opt" data-q="4" data-v="4"><span class="opt-circle">④</span><span class="opt-text">다량 (300~500 mg) — 아메리카노 3~4잔 수준</span></button>
+        <button class="opt" data-q="4" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">고용량 (500 mg 초과) — 아메리카노 5잔 이상 수준</span></button>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="q-card" data-q="5">
+      <div class="q-meta">
+        <span class="q-num-badge">Q5</span>
+        <span class="q-tag">음료 종류</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">가장 자주 섭취하는 카페인 음료의 종류는 무엇인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="5" data-v="1"><span class="opt-circle">①</span><span class="opt-text">카페인 음료를 섭취하지 않음</span></button>
+        <button class="opt" data-q="5" data-v="2"><span class="opt-circle">②</span><span class="opt-text">커피류 (아메리카노, 믹스커피, 라떼, 캡슐커피 등)</span></button>
+        <button class="opt" data-q="5" data-v="3"><span class="opt-circle">③</span><span class="opt-text">고카페인 에너지 드링크 (몬스터, 핫식스, 레드불 등)</span></button>
+        <button class="opt" data-q="5" data-v="4"><span class="opt-circle">④</span><span class="opt-text">탄산음료 (코카콜라, 마운틴듀, 펩시 등)</span></button>
+        <button class="opt" data-q="5" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">차류 및 기타 (녹차, 홍차, 카페인 보조제 등)</span></button>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card" data-q="6">
+      <div class="q-meta">
+        <span class="q-num-badge">Q6</span>
+        <span class="q-tag">섭취 시간대</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">하루 중 카페인을 가장 주로 섭취하는 시간대는 언제인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="6" data-v="1"><span class="opt-circle">①</span><span class="opt-text">카페인을 섭취하지 않음</span></button>
+        <button class="opt" data-q="6" data-v="2"><span class="opt-circle">②</span><span class="opt-text">이른 오전 (기상 직후 ~ 오전 10시)</span></button>
+        <button class="opt" data-q="6" data-v="3"><span class="opt-circle">③</span><span class="opt-text">늦은 오전 ~ 점심 (오전 10시 ~ 오후 2시)</span></button>
+        <button class="opt" data-q="6" data-v="4"><span class="opt-circle">④</span><span class="opt-text">오후 (오후 2시 ~ 오후 6시)</span></button>
+        <button class="opt" data-q="6" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">저녁 이후 (오후 6시 ~ 취침 전)</span></button>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="q-card" data-q="7">
+      <div class="q-meta">
+        <span class="q-num-badge">Q7</span>
+        <span class="q-tag">취침 전 타임갭</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">잠드는 시간을 기준으로, 마지막으로 카페인을 섭취하는 시점은 언제인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="7" data-v="1"><span class="opt-circle">①</span><span class="opt-text">카페인을 섭취하지 않음</span></button>
+        <button class="opt" data-q="7" data-v="2"><span class="opt-circle">②</span><span class="opt-text">취침 12시간 이상 전</span></button>
+        <button class="opt" data-q="7" data-v="3"><span class="opt-circle">③</span><span class="opt-text">취침 6시간 ~ 12시간 전</span></button>
+        <button class="opt" data-q="7" data-v="4"><span class="opt-circle">④</span><span class="opt-text">취침 3시간 ~ 6시간 전</span></button>
+        <button class="opt" data-q="7" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">취침 3시간 이내 (취침 직전 포함)</span></button>
+      </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="section-divider" data-section>
+      <div class="section-divider-line"></div>
+      <div class="section-divider-badge">
+        <div class="badge-icon s2">🌙</div>
+        섹션 2 · 수면 패턴 및 위상 분석
+      </div>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="q-card" data-q="8">
+      <div class="q-meta">
+        <span class="q-num-badge">Q8</span>
+        <span class="q-tag">수면 잠복기</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">잠자리에 누운 후 실제로 잠이 들 때까지 걸리는 시간은 대략 어느 정도인가요?</div>
+      <div class="q-hint">정상 수면 잠복기: 5~20분 이내 (5분 미만은 오히려 수면 부족 신호일 수 있음)</div>
+      <div class="options">
+        <button class="opt" data-q="8" data-v="1"><span class="opt-circle">①</span><span class="opt-text">5분 미만 (거의 눕자마자 잠듦)</span></button>
+        <button class="opt" data-q="8" data-v="2"><span class="opt-circle">②</span><span class="opt-text">5분 이상 ~ 20분 미만 (일반적 정상 범위)</span></button>
+        <button class="opt" data-q="8" data-v="3"><span class="opt-circle">③</span><span class="opt-text">20분 이상 ~ 45분 미만</span></button>
+        <button class="opt" data-q="8" data-v="4"><span class="opt-circle">④</span><span class="opt-text">45분 이상 ~ 90분 미만</span></button>
+        <button class="opt" data-q="8" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">90분 이상 (심각한 입면 지연)</span></button>
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="q-card" data-q="9">
+      <div class="q-meta">
+        <span class="q-num-badge">Q9</span>
+        <span class="q-tag">주중 입면 시간</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">주중(평일)을 기준으로, 주로 잠자리에 드는 시간대는 언제인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="9" data-v="1"><span class="opt-circle">①</span><span class="opt-text">밤 10시 이전</span></button>
+        <button class="opt" data-q="9" data-v="2"><span class="opt-circle">②</span><span class="opt-text">밤 10시 ~ 자정 (0시)</span></button>
+        <button class="opt" data-q="9" data-v="3"><span class="opt-circle">③</span><span class="opt-text">자정 (0시) ~ 새벽 2시</span></button>
+        <button class="opt" data-q="9" data-v="4"><span class="opt-circle">④</span><span class="opt-text">새벽 2시 ~ 새벽 4시</span></button>
+        <button class="opt" data-q="9" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">새벽 4시 이후 (또는 날이 밝은 후)</span></button>
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="q-card" data-q="10">
+      <div class="q-meta">
+        <span class="q-num-badge">Q10</span>
+        <span class="q-tag">소셜 시차</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">주중(평일)과 휴일(주말)의 기상 시간 차이는 대략 어느 정도인가요?</div>
+      <div class="q-hint">이 차이를 '소셜 시차(Social Jetlag)'라고 합니다. 2시간 이상이면 생체리듬에 영향을 줄 수 있습니다.</div>
+      <div class="options">
+        <button class="opt" data-q="10" data-v="1"><span class="opt-circle">①</span><span class="opt-text">거의 없음 (30분 이내 차이)</span></button>
+        <button class="opt" data-q="10" data-v="2"><span class="opt-circle">②</span><span class="opt-text">약 1시간 차이</span></button>
+        <button class="opt" data-q="10" data-v="3"><span class="opt-circle">③</span><span class="opt-text">약 2시간 차이</span></button>
+        <button class="opt" data-q="10" data-v="4"><span class="opt-circle">④</span><span class="opt-text">약 3시간 차이</span></button>
+        <button class="opt" data-q="10" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">4시간 이상 차이 (휴일에 크게 늦잠)</span></button>
+      </div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="q-card" data-q="11">
+      <div class="q-meta">
+        <span class="q-num-badge">Q11</span>
+        <span class="q-tag">수면 개선 시도</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">수면 패턴을 개선하기 위해 시도해 본 방법 중 가장 주된 것은 무엇인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="11" data-v="1"><span class="opt-circle">①</span><span class="opt-text">시도해 본 적 없음 (또는 개선이 필요하다고 생각하지 않음)</span></button>
+        <button class="opt" data-q="11" data-v="2"><span class="opt-circle">②</span><span class="opt-text">생활 습관 교정 (규칙적 기상, 카페인·야식 제한, 낮 햇빛 쬐기 등)</span></button>
+        <button class="opt" data-q="11" data-v="3"><span class="opt-circle">③</span><span class="opt-text">수면 환경 개선 (온습도 조절, 암막 커튼, 침구 교체 등)</span></button>
+        <button class="opt" data-q="11" data-v="4"><span class="opt-circle">④</span><span class="opt-text">전자기기 사용 제한 (취침 전 스마트폰 금지, 블루라이트 차단 등)</span></button>
+        <button class="opt" data-q="11" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">의학·보조제 도움 (수면유도제, 멜라토닌, 병원 진료 등)</span></button>
+      </div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="q-card" data-q="12">
+      <div class="q-meta">
+        <span class="q-num-badge">Q12</span>
+        <span class="q-tag">수면 악화 원인</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">본인의 수면 패턴이 가장 많이 악화되는 주된 원인은 무엇이라고 생각하시나요?</div>
+      <div class="options">
+        <button class="opt" data-q="12" data-v="1"><span class="opt-circle">①</span><span class="opt-text">불규칙한 생활 습관 (야식, 늦은 카페인 섭취, 과도한 낮잠 등)</span></button>
+        <button class="opt" data-q="12" data-v="2"><span class="opt-circle">②</span><span class="opt-text">전자기기 과다 사용 (스마트폰, 게임, 영상 시청 등)</span></button>
+        <button class="opt" data-q="12" data-v="3"><span class="opt-circle">③</span><span class="opt-text">학업·업무 과부하 (늦은 과제, 야근, 시험 기간 등)</span></button>
+        <button class="opt" data-q="12" data-v="4"><span class="opt-circle">④</span><span class="opt-text">심리적 요인 (스트레스, 불안, 과도한 생각 등)</span></button>
+        <button class="opt" data-q="12" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">환경적·신체적 요인 (소음, 빛, 수면 장애 진단, 질병 등)</span></button>
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="section-divider" data-section>
+      <div class="section-divider-line"></div>
+      <div class="section-divider-badge">
+        <div class="badge-icon s3">🧠</div>
+        섹션 3 · 두뇌 활성화 및 학업 영향
+      </div>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Q13 -->
+    <div class="q-card" data-q="13">
+      <div class="q-meta">
+        <span class="q-num-badge">Q13</span>
+        <span class="q-tag">뇌파 활성화</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">전날 수면 시간에 따라 다음 날 두뇌 각성 상태(머리 맑음·집중력)가 얼마나 달라진다고 느끼시나요?</div>
+      <div class="options">
+        <button class="opt" data-q="13" data-v="1"><span class="opt-circle">①</span><span class="opt-text">전혀 달라지지 않는다 — 수면과 무관하게 항상 비슷함</span></button>
+        <button class="opt" data-q="13" data-v="2"><span class="opt-circle">②</span><span class="opt-text">거의 달라지지 않는다 — 영향이 있어도 무시할 수준</span></button>
+        <button class="opt" data-q="13" data-v="3"><span class="opt-circle">③</span><span class="opt-text">약간 달라진다 — 체감은 하지만 일상에 지장 없음</span></button>
+        <button class="opt" data-q="13" data-v="4"><span class="opt-circle">④</span><span class="opt-text">꽤 많이 달라진다 — 수면 부족 시 집중력이 눈에 띄게 저하됨</span></button>
+        <button class="opt" data-q="13" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">매우 크게 달라진다 — 수면 상태에 따라 하루 컨디션이 완전히 좌우됨</span></button>
+      </div>
+    </div>
+
+    <!-- Q14 -->
+    <div class="q-card" data-q="14">
+      <div class="q-meta">
+        <span class="q-num-badge">Q14</span>
+        <span class="q-tag">두뇌 최고점</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">하루 중 집중력이 가장 높고 두뇌가 가장 활발하다고 체감하는 시간대는 언제인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="14" data-v="1"><span class="opt-circle">①</span><span class="opt-text">새벽 ~ 이른 아침 (04:00 ~ 09:00)</span></button>
+        <button class="opt" data-q="14" data-v="2"><span class="opt-circle">②</span><span class="opt-text">오전 (09:00 ~ 12:00)</span></button>
+        <button class="opt" data-q="14" data-v="3"><span class="opt-circle">③</span><span class="opt-text">오후 (12:00 ~ 18:00)</span></button>
+        <button class="opt" data-q="14" data-v="4"><span class="opt-circle">④</span><span class="opt-text">저녁 (18:00 ~ 22:00)</span></button>
+        <button class="opt" data-q="14" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">심야 (22:00 ~ 04:00)</span></button>
+      </div>
+    </div>
+
+    <!-- Q15 -->
+    <div class="q-card" data-q="15">
+      <div class="q-meta">
+        <span class="q-num-badge">Q15</span>
+        <span class="q-tag">오전 피로도</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">오전 수업(또는 오전 일과) 시간에 느끼는 피로도는 어느 정도인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="15" data-v="1"><span class="opt-circle">①</span><span class="opt-text">전혀 피로하지 않다 — 매우 맑고 활기찬 상태</span></button>
+        <button class="opt" data-q="15" data-v="2"><span class="opt-circle">②</span><span class="opt-text">별로 피로하지 않다 — 약간 무겁지만 집중에는 문제 없음</span></button>
+        <button class="opt" data-q="15" data-v="3"><span class="opt-circle">③</span><span class="opt-text">보통이다 — 가끔 졸음이 오지만 버틸 수 있음</span></button>
+        <button class="opt" data-q="15" data-v="4"><span class="opt-circle">④</span><span class="opt-text">꽤 피로하다 — 자주 졸음이 와서 집중하기 어려움</span></button>
+        <button class="opt" data-q="15" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">매우 피로하다 — 수업 중 자거나 거의 포기 상태</span></button>
+      </div>
+    </div>
+
+    <!-- Q16 -->
+    <div class="q-card" data-q="16">
+      <div class="q-meta">
+        <span class="q-num-badge">Q16</span>
+        <span class="q-tag">학업 집중도</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">수면 부족이 학업(또는 업무) 집중도와 성취도에 얼마나 부정적 영향을 미친다고 느끼시나요?</div>
+      <div class="options">
+        <button class="opt" data-q="16" data-v="1"><span class="opt-circle">①</span><span class="opt-text">전혀 영향 없다 — 수면과 무관하게 성과가 일정함</span></button>
+        <button class="opt" data-q="16" data-v="2"><span class="opt-circle">②</span><span class="opt-text">거의 영향 없다 — 미미하게 느끼지만 결과에는 지장 없음</span></button>
+        <button class="opt" data-q="16" data-v="3"><span class="opt-circle">③</span><span class="opt-text">약간 영향이 있다 — 집중력이 떨어지지만 어느 정도 보완 가능</span></button>
+        <button class="opt" data-q="16" data-v="4"><span class="opt-circle">④</span><span class="opt-text">꽤 큰 영향이 있다 — 수행 능력이 눈에 띄게 저하됨</span></button>
+        <button class="opt" data-q="16" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">매우 치명적이다 — 수면 없이는 정상적인 학습·업무가 불가능</span></button>
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="section-divider" data-section>
+      <div class="section-divider-line"></div>
+      <div class="section-divider-badge">
+        <div class="badge-icon s4">📱</div>
+        섹션 4 · 디지털 기기 사용 및 야간 활동
+      </div>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Q17 -->
+    <div class="q-card" data-q="17">
+      <div class="q-meta">
+        <span class="q-num-badge">Q17</span>
+        <span class="q-tag">기기 사용 시간</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">학업·업무 외 개인 목적으로 사용하는 하루 평균 디지털 기기(스마트폰·태블릿·PC 등) 사용 시간은 얼마인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="17" data-v="1"><span class="opt-circle">①</span><span class="opt-text">1시간 미만</span></button>
+        <button class="opt" data-q="17" data-v="2"><span class="opt-circle">②</span><span class="opt-text">1시간 이상 ~ 3시간 미만</span></button>
+        <button class="opt" data-q="17" data-v="3"><span class="opt-circle">③</span><span class="opt-text">3시간 이상 ~ 5시간 미만</span></button>
+        <button class="opt" data-q="17" data-v="4"><span class="opt-circle">④</span><span class="opt-text">5시간 이상 ~ 7시간 미만</span></button>
+        <button class="opt" data-q="17" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">7시간 이상</span></button>
+      </div>
+    </div>
+
+    <!-- Q18 -->
+    <div class="q-card" data-q="18">
+      <div class="q-meta">
+        <span class="q-num-badge">Q18</span>
+        <span class="q-tag">블루라이트 차단</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">야간에 디지털 기기를 사용할 때 야간 모드·다크 모드·블루라이트 차단 기능을 얼마나 자주 사용하시나요?</div>
+      <div class="options">
+        <button class="opt" data-q="18" data-v="1"><span class="opt-circle">①</span><span class="opt-text">전혀 사용하지 않는다 — 기능 자체를 설정한 적 없음</span></button>
+        <button class="opt" data-q="18" data-v="2"><span class="opt-circle">②</span><span class="opt-text">거의 사용하지 않는다 — 알고는 있지만 잘 켜지 않음</span></button>
+        <button class="opt" data-q="18" data-v="3"><span class="opt-circle">③</span><span class="opt-text">가끔 사용한다 — 피로할 때나 생각날 때만 켬</span></button>
+        <button class="opt" data-q="18" data-v="4"><span class="opt-circle">④</span><span class="opt-text">자주 사용한다 — 야간에 주로 켜는 편</span></button>
+        <button class="opt" data-q="18" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">항상 켜둔다 — 자동 설정 또는 하루 종일 유지</span></button>
+      </div>
+    </div>
+
+    <!-- Q19 -->
+    <div class="q-card" data-q="19">
+      <div class="q-meta">
+        <span class="q-num-badge">Q19</span>
+        <span class="q-tag">야간 콘텐츠</span>
+        <div class="q-answered-check">✓</div>
+      </div>
+      <div class="q-text">심야 시간(밤 11시 이후) 온라인·SNS 활동 시 가장 주로 소비하는 콘텐츠 유형은 무엇인가요?</div>
+      <div class="options">
+        <button class="opt" data-q="19" data-v="1"><span class="opt-circle">①</span><span class="opt-text">심야에 온라인 활동을 하지 않음</span></button>
+        <button class="opt" data-q="19" data-v="2"><span class="opt-circle">②</span><span class="opt-text">유머·엔터테인먼트 (밈, 게임, 유튜브, 숏폼, 아이돌 등)</span></button>
+        <button class="opt" data-q="19" data-v="3"><span class="opt-circle">③</span><span class="opt-text">일상·공감·소통 (수다, 고민 상담, SNS 피드 등)</span></button>
+        <button class="opt" data-q="19" data-v="4"><span class="opt-circle">④</span><span class="opt-text">취미·관심사 (쇼핑, 스포츠, 뷰티, 독서 커뮤니티 등)</span></button>
+        <button class="opt" data-q="19" data-v="5"><span class="opt-circle">⑤</span><span class="opt-text">학업·정보 탐색 (과제, 전공, 뉴스, 재테크 등)</span></button>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="submit-wrap" id="submitWrap">
+      <div class="submit-card">
+        <div class="submit-progress-row">
+          <div class="submit-progress-text"><strong id="answeredCount">0</strong> / 19 문항 완료</div>
+          <div class="submit-bar-wrap">
+            <div class="submit-bar-fill" id="submitBar"></div>
+          </div>
+        </div>
+        <div class="incomplete-note" id="incompleteNote"></div>
+        <button class="btn-submit" id="btnSubmit" disabled>
+          결과 분석하기 <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+  </div><!-- /survey-page -->
+
+  <!-- RESULTS PAGE -->
+  <div id="results-page">
+    <div class="results-hero">
+      <div class="check-circle">✓</div>
+      <h2>설문 결과 분석</h2>
+      <p>응답을 바탕으로 카페인·수면·디지털 습관 패턴을 분석했습니다</p>
+    </div>
+
+    <!-- SCORE CARDS -->
+    <div class="score-grid" id="scoreGrid"></div>
+
+    <!-- INSIGHT -->
+    <div class="insight-box" id="insightBox"></div>
+
+    <!-- DETAIL RESULTS -->
+    <div id="detailResults"></div>
+
+    <div style="text-align:center">
+      <button class="btn-reset" id="btnReset">↺ 다시 응답하기</button>
+    </div>
+  </div><!-- /results-page -->
+
+</div><!-- /shell -->
+
+<script>
+const TOTAL = 19;
+const answers = {};
+
+const questions = {
+  1:  { text: "카페인 섭취 후 수면 영향 정도", opts: ["전혀 없음","거의 없음","약간 느낌","어느 정도 느낌","매우 심함"] },
+  2:  { text: "카페인 후 심박수 변화 체감", opts: ["변화 없음","미세하게 증가","약간 두근거림","뚜렷한 두근거림","매우 빠르고 강함"] },
+  3:  { text: "카페인 각성 효과 체감", opts: ["효과 없음","거의 없음","일시적 효과","확실한 효과","매우 큰 효과"] },
+  4:  { text: "하루 평균 카페인 총 섭취량", opts: ["0 mg","1~100 mg","100~300 mg","300~500 mg","500 mg 초과"] },
+  5:  { text: "주로 마시는 카페인 음료", opts: ["섭취 안 함","커피류","에너지 드링크","탄산음료","차류·기타"] },
+  6:  { text: "카페인 주 섭취 시간대", opts: ["섭취 안 함","이른 오전","늦은 오전~점심","오후","저녁 이후"] },
+  7:  { text: "마지막 카페인 ~ 취침 타임갭", opts: ["섭취 안 함","12시간 이상 전","6~12시간 전","3~6시간 전","3시간 이내"] },
+  8:  { text: "수면 잠복기 (입면 소요 시간)", opts: ["5분 미만","5~20분","20~45분","45~90분","90분 이상"] },
+  9:  { text: "주중 취침 시간대", opts: ["밤 10시 이전","10시~자정","자정~새벽2시","새벽2~4시","새벽 4시 이후"] },
+  10: { text: "주중·휴일 기상 시간 편차 (소셜 시차)", opts: ["30분 이내","약 1시간","약 2시간","약 3시간","4시간 이상"] },
+  11: { text: "수면 개선 시도 방법", opts: ["없음","생활 습관 교정","수면 환경 개선","전자기기 제한","의학·보조제"] },
+  12: { text: "수면 악화 주된 원인", opts: ["생활 습관","전자기기 과다","학업·업무 과부하","심리적 요인","환경·신체적 요인"] },
+  13: { text: "수면에 따른 두뇌 활성화 차이", opts: ["전혀 없음","거의 없음","약간 달라짐","꽤 달라짐","완전히 좌우됨"] },
+  14: { text: "두뇌 활성화 최고점 시간대", opts: ["새벽~오전9시","오전9~12시","오후12~18시","저녁18~22시","심야22~4시"] },
+  15: { text: "오전 수업·일과 피로도", opts: ["매우 맑음","별로 피로 안 함","보통","꽤 피로함","매우 피로함"] },
+  16: { text: "수면 부족이 학업에 미치는 영향", opts: ["영향 없음","거의 없음","약간 영향","꽤 큰 영향","매우 치명적"] },
+  17: { text: "하루 평균 여가 디지털 기기 사용 시간", opts: ["1시간 미만","1~3시간","3~5시간","5~7시간","7시간 이상"] },
+  18: { text: "야간 블루라이트 차단 기능 사용", opts: ["전혀 안 함","거의 안 함","가끔 사용","자주 사용","항상 켜둠"] },
+  19: { text: "심야 주 소비 콘텐츠 유형", opts: ["활동 안 함","유머·엔터테인먼트","일상·소통","취미·관심사","학업·정보"] },
+};
+
+const sectionMap = {
+  "섹션 1 · 카페인 섭취 및 신체 반응": [1,2,3,4,5,6,7],
+  "섹션 2 · 수면 패턴 및 위상 분석": [8,9,10,11,12],
+  "섹션 3 · 두뇌 활성화 및 학업 영향": [13,14,15,16],
+  "섹션 4 · 디지털 기기 사용 및 야간 활동": [17,18,19],
+};
+
+function countAnswered() {
+  return Object.keys(answers).length;
+}
+
+function updateProgress() {
+  const n = countAnswered();
+  const pct = (n / TOTAL) * 100;
+  document.getElementById('topBar').style.width = pct + '%';
+  document.getElementById('fcNum').textContent = n;
+  document.getElementById('fcFill').style.width = pct + '%';
+  document.getElementById('answeredCount').textContent = n;
+  document.getElementById('submitBar').style.width = pct + '%';
+
+  const btn = document.getElementById('btnSubmit');
+  const note = document.getElementById('incompleteNote');
+  if (n === TOTAL) {
+    btn.disabled = false;
+    note.textContent = '';
+  } else {
+    btn.disabled = true;
+    note.textContent = `아직 ${TOTAL - n}개 문항이 남아 있습니다.`;
+  }
+}
+
+// Option click handler
+document.querySelectorAll('.opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const q = btn.dataset.q;
+    const v = parseInt(btn.dataset.v);
+    answers[q] = v;
+
+    // Deselect siblings
+    document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    // Mark card as answered
+    const card = document.querySelector(`.q-card[data-q="${q}"]`);
+    if (card) card.classList.add('answered');
+
+    updateProgress();
+  });
+});
+
+// Submit
+document.getElementById('btnSubmit').addEventListener('click', () => {
+  showResults();
+});
+
+// Reset
+document.getElementById('btnReset').addEventListener('click', () => {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  document.querySelectorAll('.opt').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.q-card').forEach(c => c.classList.remove('answered'));
+  document.getElementById('survey-page').style.display = '';
+  document.getElementById('results-page').classList.remove('show');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+function calcScores() {
+  // Caffeine risk: Q1(sleep impact)+Q4(amount)+Q7(timegap reversed) → higher = worse
+  const caffeineRisk = Math.round(
+    ((answers[1]||1) + (answers[4]||1) + (answers[7]||1)) / 3 * 20
+  );
+
+  // Sleep quality: Q8(latency, 2=best)+Q9(bedtime)+Q10(social jetlag) → lower bedtime num = better
+  const sleepScore = Math.round(
+    (6 - ((answers[8]||3) + (answers[9]||3) + (answers[10]||3)) / 3) / 5 * 100
+  );
+
+  // Daytime fatigue: Q15+Q16 averages
+  const fatigue = Math.round(((answers[15]||3) + (answers[16]||3)) / 2 * 20);
+
+  // Screen impact: Q17+Q18(reversed, less filter = worse)
+  const screenScore = Math.round(((answers[17]||3) + (6-(answers[18]||3))) / 2 * 20);
+
+  return { caffeineRisk, sleepScore, fatigue, screenScore };
+}
+
+function getRiskClass(val) {
+  if (val <= 40) return 'low';
+  if (val <= 70) return 'mid';
+  return 'high';
+}
+
+function generateInsights() {
+  const tips = [];
+  const v = answers;
+
+  if (v[7] >= 4) tips.push("마지막 카페인 섭취가 취침 6시간 이내입니다. 카페인 반감기는 약 5~7시간으로, 취침 최소 6시간 전에는 섭취를 중단하는 것이 권장됩니다.");
+  if (v[4] >= 4) tips.push("하루 카페인 섭취량이 300mg 이상입니다. 과다 섭취는 수면 잠복기 증가 및 수면 구조(REM 비율) 변화와 관련이 있습니다.");
+  if (v[10] >= 3) tips.push("주중·휴일 기상 시간 차가 2시간 이상인 '소셜 시차(Social Jetlag)' 상태입니다. 이는 대사 이상, 인지 기능 저하와 연관될 수 있습니다.");
+  if (v[9] >= 4) tips.push("주중 취침 시간이 새벽 2시 이후입니다. 만성적인 수면 위상 지연은 낮 시간 기능 저하 및 우울 위험과 관련됩니다.");
+  if (v[8] === 1) tips.push("눕자마자 5분 내 잠드는 것은 수면 부족의 신호일 수 있습니다. 정상 잠복기는 5~20분입니다.");
+  if (v[17] >= 4 && v[18] <= 2) tips.push("하루 5시간 이상 디지털 기기를 사용하면서 블루라이트 차단을 거의 하지 않고 있습니다. 멜라토닌 분비에 영향을 줄 수 있습니다.");
+  if (v[1] >= 4 && v[7] >= 4) tips.push("카페인 수면 영향이 크고 취침 직전까지 섭취하고 있습니다. 카페인 컷오프 타임 설정이 가장 우선순위가 높은 개선 과제입니다.");
+  if (v[15] >= 4 && v[9] >= 4) tips.push("늦은 취침 시간과 오전 피로도 사이의 상관관계가 높습니다. 수면 위상을 앞당기는 것이 오전 수행 능력 향상에 도움이 됩니다.");
+
+  if (tips.length === 0) tips.push("현재 수면·카페인 습관이 비교적 양호한 패턴을 보이고 있습니다. 규칙적인 수면 스케줄을 유지하는 것이 중요합니다.");
+
+  return tips;
+}
+
+function showResults() {
+  document.getElementById('survey-page').style.display = 'none';
+  const rp = document.getElementById('results-page');
+  rp.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const sc = calcScores();
+
+  // Score cards
+  document.getElementById('scoreGrid').innerHTML = `
+    <div class="score-card">
+      <div class="s-label">카페인 위험도</div>
+      <div class="s-value ${getRiskClass(sc.caffeineRisk)}">${sc.caffeineRisk}</div>
+      <div class="s-sub">/ 100점</div>
+    </div>
+    <div class="score-card">
+      <div class="s-label">수면 품질 추정</div>
+      <div class="s-value ${getRiskClass(100 - sc.sleepScore)}">${sc.sleepScore}</div>
+      <div class="s-sub">/ 100점</div>
+    </div>
+    <div class="score-card">
+      <div class="s-label">주간 피로도</div>
+      <div class="s-value ${getRiskClass(sc.fatigue)}">${sc.fatigue}</div>
+      <div class="s-sub">/ 100점</div>
+    </div>
+    <div class="score-card">
+      <div class="s-label">스크린 영향도</div>
+      <div class="s-value ${getRiskClass(sc.screenScore)}">${sc.screenScore}</div>
+      <div class="s-sub">/ 100점</div>
+    </div>
+  `;
+
+  // Insights
+  const tips = generateInsights();
+  document.getElementById('insightBox').innerHTML = `
+    <h3>⚡ 분석 인사이트</h3>
+    <ul class="insight-list">
+      ${tips.map(t => `<li>${t}</li>`).join('')}
+    </ul>
+    <p style="font-size:11px;color:var(--text3);margin-top:14px">※ 본 분석은 연구용 자가 평가이며, 의학적 진단을 대체하지 않습니다.</p>
+  `;
+
+  // Detail results by section
+  let html = '';
+  Object.entries(sectionMap).forEach(([sectionName, qNums], idx) => {
+    html += `<div class="result-section"><div class="result-section-title">${sectionName}</div>`;
+    qNums.forEach(qNum => {
+      const v = answers[String(qNum)] || answers[qNum];
+      const q = questions[qNum];
+      const optText = v ? q.opts[v-1] : '미응답';
+      html += `
+        <div class="result-item" style="animation-delay:${idx * 0.05}s">
+          <div class="result-q-num">Q${qNum}</div>
+          <div class="result-content">
+            <div class="result-q-text">${q.text}</div>
+            <div class="result-answer"><span class="result-answer-num">${v||'?'}</span>${optText}</div>
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+  });
+  document.getElementById('detailResults').innerHTML = html;
+}
+
+// ── INTERSECTION OBSERVER for scroll animations ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.q-card, .section-divider, .submit-wrap').forEach(el => {
+  observer.observe(el);
+});
+
+updateProgress();
+</script>
+</body>
+</html>

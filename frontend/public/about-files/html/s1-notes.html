@@ -1,0 +1,373 @@
+
+<style>
+h2.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.root{padding:1rem 0;font-family:var(--font-sans)}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.5rem}
+.ftag{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);transition:all .18s}
+.ftag.active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.1rem 1.25rem;transition:border-color .18s;cursor:pointer}
+.card:hover{border-color:var(--color-border-secondary)}
+.card-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
+.num{min-width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.card-title{font-size:14px;font-weight:500;color:var(--color-text-primary);line-height:1.4}
+.card-body{font-size:12.5px;color:var(--color-text-secondary);line-height:1.65;margin-left:36px;margin-bottom:8px}
+.meta{margin-left:36px;display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.pill{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;font-weight:500}
+.expand{display:none;margin-left:36px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary)}
+.expand.open{display:block}
+.expand-section{margin-bottom:8px}
+.expand-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.expand-text{font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+.card.hidden{display:none}
+
+.n-행동{background:#EEEDFE;color:#3C3489}
+.n-생리{background:#E1F5EE;color:#085041}
+.n-약리{background:#FAECE7;color:#712B13}
+.n-조명{background:#FAEEDA;color:#633806}
+.n-인지{background:#E6F1FB;color:#0C447C}
+
+.t-행동{background:#EEEDFE;color:#3C3489}
+.t-생리{background:#E1F5EE;color:#085041}
+.t-약리{background:#FAECE7;color:#712B13}
+.t-조명{background:#FAEEDA;color:#633806}
+.t-인지{background:#E6F1FB;color:#0C447C}
+
+.d-중간{background:#FAEEDA;color:#633806}
+.d-어려움{background:#FCEBEB;color:#791F1F}
+.d-도전{background:#F4C0D1;color:#72243E}
+</style>
+
+<div class="root">
+<h2 class="sr-only">유리프 프로젝트 실험 기반 연구 아이디어 10가지 — 클릭하면 상세 실험 설계 확인 가능</h2>
+
+<p style="font-size:12.5px;color:var(--color-text-secondary);margin-bottom:1rem">카드를 클릭하면 독립변수·종속변수·측정 방법이 펼쳐집니다.</p>
+
+<div class="filter-row" id="filters">
+  <button class="ftag active" data-cat="전체" onclick="filter(this)">전체 (10)</button>
+  <button class="ftag" data-cat="행동" onclick="filter(this)">행동·습관 개입</button>
+  <button class="ftag" data-cat="생리" onclick="filter(this)">생리·신호 측정</button>
+  <button class="ftag" data-cat="약리" onclick="filter(this)">약리·물질</button>
+  <button class="ftag" data-cat="조명" onclick="filter(this)">조명·환경</button>
+  <button class="ftag" data-cat="인지" onclick="filter(this)">인지 수행</button>
+</div>
+
+<div class="grid" id="grid">
+
+  <div class="card" data-cat="인지" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-인지">1</div>
+      <div class="card-title">크로노타입 × 시험 시각 — 인지 수행 능력 비교 실험</div>
+    </div>
+    <div class="card-body">아침형·저녁형 학생을 MCTQ로 분류한 뒤, 동일한 인지 과제(스트룹 검사 / N-Back)를 오전 8시와 오후 8시 두 시점에 각각 수행시켜 크로노타입과 시각이 교호작용하는지 검증한다.</div>
+    <div class="meta">
+      <span class="pill t-인지">인지 수행</span>
+      <span class="pill d-중간">난이도: 중간</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">크로노타입(아침형 vs 저녁형), 과제 수행 시각(오전 08:00 vs 오후 20:00)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">스트룹 과제 반응 정확도(%), 평균 반응 시간(ms), N-Back 히트율</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">무료 웹 기반 스트룹/N-Back 도구(PsyToolkit 등) 사용. 2×2 혼합 분산분석(Mixed ANOVA)으로 교호작용 검증. 피험자 내 설계로 동일 학생이 양쪽 시각 모두 참여.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">유가빈(뇌과학) 파트의 인지 기능 피크 시간대 이론을 직접 실증하는 실험</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="조명" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-조명">2</div>
+      <div class="card-title">교실 조명 색온도 조작 → 각성도·집중력 변화 측정</div>
+    </div>
+    <div class="card-body">동일 학급에서 같은 수업을 고색온도(6500K)·저색온도(3000K) 조건에서 각각 진행하고, 주관적 각성도(리커트 1회)와 객관적 집중력 과제 점수를 비교한다.</div>
+    <div class="meta">
+      <span class="pill t-조명">조명·환경</span>
+      <span class="pill d-중간">난이도: 중간</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">조명 색온도(6500K 청백색 vs 3000K 난백색), 측정 시각(오전 1교시 기준 고정)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">집중력 과제 정답률, 주관적 각성 점수(0~10), 선택적 주의 과제(d2 검사 일부)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">Philips Hue 스마트 전구 또는 색온도 조절 가능한 LED 패널 대여. 피험자 내 교차 설계(AB/BA), 1주 간격 워시아웃. 대응 표본 t-검정.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">윤지후(정책) 파트의 HCL 조명 도입 정책 제안에 대한 실증 근거 생성</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="약리" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-약리">3</div>
+      <div class="card-title">카페인 섭취 타이밍 × 수면 잠복기 통제 실험</div>
+    </div>
+    <div class="card-body">동일 피험자를 대상으로 취침 3시간 전 카페인 섭취군, 6시간 전 섭취군, 미섭취군을 기간별로 배정하고 스마트워치로 수면 잠복기·수면 효율을 실측한다.</div>
+    <div class="meta">
+      <span class="pill t-약리">약리·물질</span>
+      <span class="pill d-어려움">난이도: 어려움</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">카페인 최종 섭취 시각(취침 3h 전 / 6h 전 / 미섭취), 용량 고정(커피 1잔 = 약 80mg)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">수면 잠복기(min), 총 수면 시간(h), 수면 효율(%), 주간 각성도(ESS 단축형)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">3×1 피험자 내 반복 측정 설계, 각 조건 7일씩. Fitbit/Galaxy Watch 수면 데이터 수출 후 Python으로 분석. 일원 반복측정 ANOVA + Bonferroni 보정.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">홍서준(약리) 파트의 카페인 반감기·아데노신 길항 이론을 직접 인체 수준에서 검증</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="생리" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-생리">4</div>
+      <div class="card-title">스마트워치로 사회적 시차(Social Jetlag) 직접 계측</div>
+    </div>
+    <div class="card-body">4주간 피험자의 평일·주말 수면 데이터를 웨어러블로 수집해 MSFsc 공식으로 사회적 시차를 계산하고, 시차가 클수록 주간 졸음·기분 점수와 어떤 상관을 보이는지 분석한다.</div>
+    <div class="meta">
+      <span class="pill t-생리">생리·신호 측정</span>
+      <span class="pill d-중간">난이도: 중간</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">사회적 시차 크기(MSFsc 계산값, 시간 단위) — 관찰 연구이므로 자연 분포 활용</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">월요일 오전 ESS(졸음) 점수, PHQ-2(기분) 점수, 오전 인지 과제 수행 점수</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">Fitbit API 또는 Apple HealthKit CSV 수출. MSFsc = MSF − (SDf − SDw)/2 공식 Python 구현. Pearson 상관 + 산점도 시각화.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">이정욱(공학) 파트의 MSFsc 알고리즘 구현과 Chrono-Twin 플랫폼에 실제 데이터를 흘려보내는 파이프라인 테스트</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="행동" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-행동">5</div>
+      <div class="card-title">취침 전 블루라이트 차단 개입 → 수면 위상 변화 실험</div>
+    </div>
+    <div class="card-body">피험자를 차단 안경 착용군(취침 2시간 전 착용)과 미착용군으로 무작위 배정하고 2주 후 취침 시각·수면 잠복기 변화를 비교하는 무작위 대조 설계(RCT)를 소규모로 수행한다.</div>
+    <div class="meta">
+      <span class="pill t-행동">행동·습관 개입</span>
+      <span class="pill d-어려움">난이도: 어려움</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">블루라이트 차단 안경 착용 여부(착용 vs 미착용), 착용 시작 시각(취침 2h 전으로 고정)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">취침 시각(스마트워치 실측), 수면 잠복기(min), 주관적 수면의 질(PSQI 단축형 3문항)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">차단 안경은 아마존 등 1~2만원대 제품 사용. 1주 기저치 측정 후 2주 개입, 사전·사후 대응 t-검정. 순응도는 매일 착용 시각 자기 기록으로 확인.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">전윤서(생명공학) 파트의 블루라이트-멜라토닌 억제 메커니즘을 차단 개입으로 역으로 검증</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="행동" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-행동">6</div>
+      <div class="card-title">수면 위생 교육 단기 개입 → 행동 변화 RCT</div>
+    </div>
+    <div class="card-body">학급 2개를 개입군(수면 위상 교육 1회)과 통제군으로 나눠 2주 후 실제 취침 시각·수면 시간 변화를 웨어러블로 측정한다. 지식 변화가 행동으로 이어지는지를 검증하는 소규모 RCT.</div>
+    <div class="meta">
+      <span class="pill t-행동">행동·습관 개입</span>
+      <span class="pill d-중간">난이도: 중간</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">수면 위상 교육 실시 여부(실시 vs 미실시)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">교육 전후 취침 시각 변화(Δmin), 수면 시간 변화(Δh), 수면 관련 지식 점수(자체 개발 5문항)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">사전 1주 + 교육 + 사후 2주 추적. 웨어러블 미보유 학생은 수면 일지(자동 취침 알람 활용)로 대체. 독립 표본 t-검정(집단 간) + 대응 t-검정(집단 내).</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">윤지후(정책) 파트의 사회적 인식 개선 제안에 대한 실증적 근거 — 교육 효과가 있음을 보여야 정책 의의가 생김</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="약리" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-약리">7</div>
+      <div class="card-title">에너지 드링크 성분(카페인 + 타우린) 복합 효과 분리 실험</div>
+    </div>
+    <div class="card-body">카페인 단독군 / 카페인+타우린 복합군 / 위약군(무카페인)을 크로스오버로 배정해, 에너지 드링크의 각성 효과가 카페인만의 효과인지 타우린 복합의 효과인지를 분리 검증한다.</div>
+    <div class="meta">
+      <span class="pill t-약리">약리·물질</span>
+      <span class="pill d-도전">난이도: 도전</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">음료 조건: ① 무카페인 위약 ② 카페인 80mg 단독 ③ 카페인 80mg + 타우린 1000mg</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">음료 섭취 1h·2h 후 각성도(주관 10점 척도), 반응 시간(ms), 취침 시각</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">3조건 크로스오버, 각 조건 사이 3일 워시아웃. 타우린은 영양제 캡슐, 카페인은 커피로 동량 통제. 일원 반복측정 ANOVA.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">홍서준(약리) 보고서의 카페인 기전을 타우린 상호작용까지 확장하는 심화 실험</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="생리" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-생리">8</div>
+      <div class="card-title">수면 부채 누적 모델 — 주중 수면 단축 후 주말 회복 패턴 분석</div>
+    </div>
+    <div class="card-body">피험자의 월~금 평균 수면 시간과 토·일 과수면 시간을 4주간 웨어러블로 측정해, 주중 수면 부채가 클수록 주말 과수면이 커지는 선형 관계를 실측으로 확인하고 수면 부채 누적 모델을 검증한다.</div>
+    <div class="meta">
+      <span class="pill t-생리">생리·신호 측정</span>
+      <span class="pill d-중간">난이도: 중간</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">주중 평균 수면 부채(권장 8h 기준 부족량 합산, 관찰 변수)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">주말 과수면 시간(h), MSFsc 값, 월요일 오전 인지 과제 점수</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">4주 × 피험자 20명 이상 패널 데이터. 선형 혼합 모형(LMM) 또는 단순 선형 회귀. 이정욱 파트 MSFsc 알고리즘으로 자동 계산.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">MCTQ의 MSFsc 보정 공식이 실제로 의미 있는지 데이터로 검증하는 알고리즘 검증 실험</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="인지" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-인지">9</div>
+      <div class="card-title">수면 부족 다음 날 창의적 사고 능력 측정 실험</div>
+    </div>
+    <div class="card-body">수면 6h 미만인 날과 8h 이상인 날의 다음 날 오전에 창의적 사고 과제(원격 연상 검사 RAT)를 수행하게 해, 수면 시간이 렘수면 의존적 창의력에 미치는 영향을 검증한다.</div>
+    <div class="meta">
+      <span class="pill t-인지">인지 수행</span>
+      <span class="pill d-어려움">난이도: 어려움</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">전날 수면 시간(단수면 &lt;6h vs 충분 수면 ≥8h) — 자연 발생 조건 관찰 또는 부분 통제</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">원격 연상 검사(RAT) 정답률, 발산적 사고 과제(Alternative Uses Test) 응답 수·독창성 점수</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">한국어 RAT 문항 10개 자체 번안. 전날 수면 스마트워치로 확인 후 다음 날 오전 고정 시각에 과제 수행. 대응 t-검정.</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">유가빈(뇌과학) 파트의 렘수면-창의성 기전(매슈 워커 이론)을 직접 행동 실험으로 검증</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-cat="조명" onclick="toggle(this)">
+    <div class="card-top">
+      <div class="num n-조명">10</div>
+      <div class="card-title">취침 전 스마트폰 야간 모드 vs 블루라이트 차단 vs 미사용 — 3조건 수면 비교</div>
+    </div>
+    <div class="card-body">동일 피험자에게 취침 1시간 전 ①스마트폰 야간 모드 ②블루라이트 차단 안경 ③스마트폰 미사용 조건을 1주씩 배정해 수면 잠복기와 취침 시각을 비교한다. 실용적 행동 권고의 근거가 된다.</div>
+    <div class="meta">
+      <span class="pill t-조명">조명·환경</span>
+      <span class="pill d-중간">난이도: 중간</span>
+    </div>
+    <div class="expand">
+      <div class="expand-section">
+        <div class="expand-label">독립변수</div>
+        <div class="expand-text">취침 1h 전 화면 사용 조건: ① 야간 모드(Night Shift / 나이트 라이트) ② 차단 안경 착용 ③ 화면 미사용</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">종속변수</div>
+        <div class="expand-text">수면 잠복기(min), 취침 시각(스마트워치), 다음 날 주관적 수면의 질(1문항 10점)</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">측정 방법</div>
+        <div class="expand-text">3조건 피험자 내 라틴 방격 설계(균형 순서 효과). 각 조건 7일, 이월 효과 최소화. 반복측정 ANOVA + 쌍대 비교(Tukey HSD).</div>
+      </div>
+      <div class="expand-section">
+        <div class="expand-label">연결 포인트</div>
+        <div class="expand-text">"야간 모드가 진짜 효과 있나?"는 학생들이 가장 실질적으로 궁금해하는 질문 — 직접 답을 내는 실험</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+function toggle(card){
+  const exp=card.querySelector('.expand');
+  exp.classList.toggle('open');
+}
+function filter(btn){
+  document.querySelectorAll('.ftag').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const cat=btn.dataset.cat;
+  document.querySelectorAll('.card').forEach(c=>{
+    c.classList.toggle('hidden', cat!=='전체' && c.dataset.cat!==cat);
+  });
+}
+</script>
