@@ -6,7 +6,10 @@ import {
   sleepCycleImpact,
   caffeineFamiliarUnits,
   caffeineSafeHoursNeeded,
+  normalizeInputs,
+  phaseDelayRange,
   whatIfActions,
+  DEFAULT_CAFFEINE_HALF_LIFE_H,
   type ChronoTwinInputs,
 } from "@/lib/chronoTwinModel";
 import { matchJetlagCity } from "@/lib/jetlagCities";
@@ -19,19 +22,49 @@ interface ChatMessage {
   content: string;
 }
 
+/** 방금 슬라이더가 바뀌었다면, 무엇이 얼마나 달라졌는지 서버가 직접 비교한 문장을 만든다. */
+function describeChange(prev: ChronoTwinInputs, cur: ChronoTwinInputs): string {
+  const diffs: string[] = [];
+  const num = (label: string, a: number, b: number, unit: string, digits = 0) => {
+    if (Math.abs(a - b) > 1e-9) diffs.push(`${label} ${a.toFixed(digits)}${unit} → ${b.toFixed(digits)}${unit}`);
+  };
+  num("스마트폰 사용", prev.bluelightMin, cur.bluelightMin, "분");
+  num("화면 밝기", prev.screenBrightness * 100, cur.screenBrightness * 100, "%");
+  num("카페인", prev.caffeineMg, cur.caffeineMg, "mg");
+  num("카페인 후 경과", prev.hoursSinceCaffeine, cur.hoursSinceCaffeine, "시간", 1);
+  num("조명 밝기", prev.ledLux, cur.ledLux, "lux");
+  num("조명 색온도", prev.ledColorTempK, cur.ledColorTempK, "K");
+  num("최근 평균 수면", prev.avgRecentSleepHours, cur.avgRecentSleepHours, "시간", 1);
+  if (prev.exercisedToday !== cur.exercisedToday) {
+    diffs.push(`오늘 운동 ${prev.exercisedToday ? "함" : "안 함"} → ${cur.exercisedToday ? "함" : "안 함"}`);
+  }
+  if (diffs.length === 0) return "";
+  const a = computeChronoTwin(prev).phaseDelayMin;
+  const b = computeChronoTwin(cur).phaseDelayMin;
+  return `
+[방금 사용자가 슬라이더를 바꿨어요 — 서버가 비교한 값]
+  · 바뀐 것: ${diffs.join(", ")}
+  · 위상 지연 ${a.toFixed(0)}분 → ${b.toFixed(0)}분 (${(b - a).toFixed(0)}분)
+  · 질문에 답할 때 이 변화가 무엇을 뜻하는지부터 설명하세요.
+`;
+}
+
 /**
  * 서버가 클라이언트 입력값(inputs)을 그대로 받아 chronoTwinModel로 직접 재계산한다.
  * 프론트가 보낸 "결과값"을 신뢰하지 않고 서버에서 단일 소스로 재산출함으로써,
  * AI 프롬프트에 들어가는 수치가 항상 실제 계산 로직과 일치하도록 보장한다.
  */
-function buildSystemPrompt(inputs: ChronoTwinInputs): string {
+function buildSystemPrompt(inputs: ChronoTwinInputs, previous?: ChronoTwinInputs): string {
   const result = computeChronoTwin(inputs);
+  const range = phaseDelayRange(result.phaseDelayMin);
+  const halfLife = inputs.caffeineHalfLifeH ?? DEFAULT_CAFFEINE_HALF_LIFE_H;
+  const offset = inputs.personalOffsetMin ?? 0;
   const diag = diagnosePhaseDelay(result.phaseDelayMin);
   const breakdown = phaseDelayBreakdown(inputs, result);
   const cycles = sleepCycleImpact(result.phaseDelayMin, inputs.avgRecentSleepHours);
   const { city, virtualHours } = matchJetlagCity(result.phaseDelayMin);
   const units = caffeineFamiliarUnits(result.caffeineResidueMg);
-  const safeHours = caffeineSafeHoursNeeded(inputs.caffeineMg);
+  const safeHours = caffeineSafeHoursNeeded(inputs.caffeineMg, halfLife);
 
   const breakdownText = breakdown
     .map((b) => `  · ${b.label}: ${b.contributionMin >= 0 ? "+" : "−"}${Math.abs(b.contributionMin).toFixed(1)}분`)
@@ -61,12 +94,13 @@ function buildSystemPrompt(inputs: ChronoTwinInputs): string {
 - 카페인: 오후 6시 이후 ${Math.round(inputs.caffeineMg)}mg, 마신 뒤 ${inputs.hoursSinceCaffeine}시간 지나 취침
 - 방 조명: ${Math.round(inputs.ledLux)}lux, 색온도 ${Math.round(inputs.ledColorTempK)}K(2700K=전구색, 4000K=주백색, 6500K=주광색)
 - 최근 5일 평균 수면 ${inputs.avgRecentSleepHours}시간, 오늘 운동 ${inputs.exercisedToday ? "함" : "안 함"}
-
+- 사용자 설정: 카페인 반감기 가정 ${halfLife}시간${Math.abs(halfLife - DEFAULT_CAFFEINE_HALF_LIFE_H) < 0.01 ? "(기본값)" : "(사용자가 고른 민감도 반영)"}${Math.abs(offset) >= 0.5 ? `, 개인 기록 보정 ${offset >= 0 ? "+" : "−"}${Math.abs(offset).toFixed(0)}분` : ""}
+${previous ? describeChange(previous, inputs) : ""}
 [바꿨을 때의 효과 — 같은 계산식으로 다시 계산한 값]
 ${actionsText}
 
 [오늘 이 사용자의 Chrono-Twin 계산 결과]
-- 추정 수면 위상 지연: ${result.phaseDelayMin.toFixed(0)}분 (${diag.title})
+- 추정 수면 위상 지연: ${result.phaseDelayMin.toFixed(0)}분 (${diag.title}) — 오차 범위 약 ${range.lo.toFixed(0)}~${range.hi.toFixed(0)}분(더미 데이터 검증 기준, 실제 사람은 더 클 수 있음)
 - 지연 원인 분해(전부 더하면 위 지연치와 정확히 일치):
 ${breakdownText}
 - 취침 시 잔존 카페인: ${result.caffeineResidueMg.toFixed(0)}mg (${unitsText || "거의 없음"} 분량) · 안전 수준(50mg)까지 총 ${safeHours.toFixed(1)}시간 필요
@@ -139,17 +173,20 @@ async function callGeminiModel(
 }
 
 export async function POST(req: NextRequest) {
-  let body: { inputs?: ChronoTwinInputs; messages?: ChatMessage[] };
+  let body: { inputs?: Partial<ChronoTwinInputs>; previousInputs?: Partial<ChronoTwinInputs>; messages?: ChatMessage[] };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const { inputs, messages } = body;
-  if (!inputs || !Array.isArray(messages) || messages.length === 0) {
+  const { inputs: rawInputs, previousInputs, messages } = body;
+  if (!rawInputs || !Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
+  // 클라이언트 값은 믿지 않고 모형이 받는 범위로 맞춘다(NaN·범위 밖 값 차단).
+  const inputs = normalizeInputs(rawInputs);
+  const previous = previousInputs ? normalizeInputs(previousInputs) : undefined;
 
   if (!process.env.GEMINI_API_KEY) {
     return NextResponse.json(
@@ -158,7 +195,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const system = buildSystemPrompt(inputs);
+  const system = buildSystemPrompt(inputs, previous);
   const trimmed = messages.slice(-12);
 
   // 1차: 품질 우선 모델(thinkingBudget:0 적용 후 7~8초 내 응답) → 2차: lite 모델

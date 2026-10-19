@@ -2,7 +2,12 @@
 
 import { useMemo } from "react";
 import { Candy, Coffee, Zap, type LucideIcon } from "lucide-react";
-import { caffeineDecayCurve, caffeineFamiliarUnits, caffeineSafeHoursNeeded } from "@/lib/chronoTwinModel";
+import {
+  DEFAULT_CAFFEINE_HALF_LIFE_H,
+  caffeineDecayCurve,
+  caffeineFamiliarUnits,
+  caffeineSafeHoursNeeded,
+} from "@/lib/chronoTwinModel";
 
 const UNIT: Record<string, { icon: LucideIcon; suffix: string }> = {
   coffee: { icon: Coffee, suffix: "잔" },
@@ -18,14 +23,17 @@ export default function CaffeineConverter({
   doseMg,
   hoursElapsed,
   residueMg,
+  halfLifeH = DEFAULT_CAFFEINE_HALF_LIFE_H,
 }: {
   doseMg: number;
   hoursElapsed: number;
   residueMg: number;
+  /** 내 설정의 카페인 반감기 가정(h). */
+  halfLifeH?: number;
 }) {
   const units = useMemo(() => caffeineFamiliarUnits(residueMg), [residueMg]);
-  const curve = useMemo(() => caffeineDecayCurve(Math.max(doseMg, 1), 10, 48), [doseMg]);
-  const safeHours = caffeineSafeHoursNeeded(doseMg);
+  const curve = useMemo(() => caffeineDecayCurve(Math.max(doseMg, 1), 10, 48, halfLifeH), [doseMg, halfLifeH]);
+  const safeHours = caffeineSafeHoursNeeded(doseMg, halfLifeH);
   const waitMore = safeHours - hoursElapsed;
   const coffee = units.find((u) => u.key === "coffee");
 

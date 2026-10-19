@@ -65,6 +65,8 @@ export default function RootLayout({
           <p className="mt-2 text-[15px] text-fg-2">ULIF 연구팀</p>
           <p className="mx-auto mt-6 max-w-xl text-[14px] leading-relaxed text-fg-2">
             더미(합성) 데이터로 검증한 간이 추정 모형이에요. 의학적 진단이 아닙니다.
+            <br />
+            잠들기 어려운 날이 2주 넘게 이어지거나 낮에 많이 졸리면, 보건선생님이나 병원과 상담해 보세요.
           </p>
         </footer>
       </body>

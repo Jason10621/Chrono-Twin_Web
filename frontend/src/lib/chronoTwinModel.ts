@@ -48,16 +48,27 @@ export function ledEveningLoad(lux: number, colorTempK: number, adolescent = tru
 // ── 카페인 약동학 ──────────────────────────────────────────────────
 const CAFFEINE_HALF_LIFE_H = 5.5;
 
-export function caffeineResidueAt(doseMg: number, hoursElapsed: number): number {
+export const DEFAULT_CAFFEINE_HALF_LIFE_H = CAFFEINE_HALF_LIFE_H;
+
+export function caffeineResidueAt(
+  doseMg: number,
+  hoursElapsed: number,
+  halfLifeH: number = CAFFEINE_HALF_LIFE_H
+): number {
   if (hoursElapsed <= 0) return Math.max(0, doseMg);
-  return Math.max(0, doseMg) * Math.pow(0.5, hoursElapsed / CAFFEINE_HALF_LIFE_H);
+  return Math.max(0, doseMg) * Math.pow(0.5, hoursElapsed / halfLifeH);
 }
 
-export function caffeineDecayCurve(doseMg: number, maxHours = 12, steps = 40) {
+export function caffeineDecayCurve(
+  doseMg: number,
+  maxHours = 12,
+  steps = 40,
+  halfLifeH: number = CAFFEINE_HALF_LIFE_H
+) {
   const pts: { h: number; mg: number }[] = [];
   for (let i = 0; i <= steps; i++) {
     const h = (maxHours * i) / steps;
-    pts.push({ h, mg: caffeineResidueAt(doseMg, h) });
+    pts.push({ h, mg: caffeineResidueAt(doseMg, h, halfLifeH) });
   }
   return pts;
 }
@@ -89,6 +100,29 @@ export interface ChronoTwinInputs {
   ledColorTempK: number; // 실내 조명 CCT
   avgRecentSleepHours: number; // 최근 5일 평균 수면시간
   exercisedToday: boolean;
+  /** 내 설정: 카페인 반감기 가정(h). 없으면 5.5h. "예민해요"=7h, "잘 안 받아요"=4h (추정 가정). */
+  caffeineHalfLifeH?: number;
+  /** 내 기록으로 구한 개인 보정(분). 예측-실제 차이의 평균을 줄여 반영한 값. 없으면 0. */
+  personalOffsetMin?: number;
+}
+
+/** 서버·저장값 등 신뢰할 수 없는 입력을 모형이 받는 범위로 맞춘다(NaN·범위 밖 값 방지). */
+export function normalizeInputs(raw: Partial<ChronoTwinInputs> | null | undefined): ChronoTwinInputs {
+  const num = (v: unknown, lo: number, hi: number, fallback: number) =>
+    typeof v === "number" && Number.isFinite(v) ? clamp(v, lo, hi) : fallback;
+  const r = raw ?? {};
+  return {
+    bluelightMin: num(r.bluelightMin, 0, 300, 0),
+    screenBrightness: num(r.screenBrightness, 0, 1, 0.5),
+    caffeineMg: num(r.caffeineMg, 0, 1000, 0),
+    hoursSinceCaffeine: num(r.hoursSinceCaffeine, 0, 24, 0),
+    ledLux: num(r.ledLux, 0, 2000, 100),
+    ledColorTempK: num(r.ledColorTempK, 1500, 10000, 4000),
+    avgRecentSleepHours: num(r.avgRecentSleepHours, 0, 14, 7),
+    exercisedToday: r.exercisedToday === true,
+    caffeineHalfLifeH: num(r.caffeineHalfLifeH, 2.5, 10, CAFFEINE_HALF_LIFE_H),
+    personalOffsetMin: num(r.personalOffsetMin, -60, 60, 0),
+  };
 }
 
 export interface ChronoTwinResult {
@@ -103,7 +137,11 @@ export interface ChronoTwinResult {
 
 export function computeChronoTwin(inputs: ChronoTwinInputs): ChronoTwinResult {
   const bluelightAdjMin = bluelightAdjustedMin(inputs.bluelightMin, inputs.screenBrightness);
-  const caffeineResidueMg = caffeineResidueAt(inputs.caffeineMg, inputs.hoursSinceCaffeine);
+  const caffeineResidueMg = caffeineResidueAt(
+    inputs.caffeineMg,
+    inputs.hoursSinceCaffeine,
+    inputs.caffeineHalfLifeH ?? CAFFEINE_HALF_LIFE_H
+  );
   const sleepDebtMin = fiveDaySleepDebtMin(inputs.avgRecentSleepHours * 60);
   const led = ledEveningLoad(inputs.ledLux, inputs.ledColorTempK);
   const mLux = melanopicLux(inputs.ledLux, inputs.ledColorTempK);
@@ -114,7 +152,8 @@ export function computeChronoTwin(inputs: ChronoTwinInputs): ChronoTwinResult {
     GROUND_TRUTH.betaCaffeineResidue * caffeineResidueMg +
     GROUND_TRUTH.betaSleepDebt * sleepDebtMin +
     GROUND_TRUTH.gammaLedLoad * led +
-    GROUND_TRUTH.gammaExercise * (inputs.exercisedToday ? 1 : 0);
+    GROUND_TRUTH.gammaExercise * (inputs.exercisedToday ? 1 : 0) +
+    (inputs.personalOffsetMin ?? 0);
 
   // 0분(완벽) ~ 180분(심각) 을 vitality 1→0 으로. 음수(위상 전진)는 보너스로 1 이상 클립.
   const vitality = clamp(1 - phaseDelayMin / 180, 0, 1);
@@ -244,9 +283,9 @@ export function caffeineFamiliarUnits(residueMg: number): CaffeineFamiliarUnit[]
 // ── 전윤서: 카페인 컷오프(골든타임) — 안전 역치 아래로 내려가기까지 필요한 시간 ──
 const CAFFEINE_SAFE_THRESHOLD_MG = 50; // 아데노신 차단 영향이 미미해지는 근사 역치
 
-export function caffeineSafeHoursNeeded(doseMg: number): number {
+export function caffeineSafeHoursNeeded(doseMg: number, halfLifeH: number = CAFFEINE_HALF_LIFE_H): number {
   if (doseMg <= CAFFEINE_SAFE_THRESHOLD_MG) return 0;
-  return CAFFEINE_HALF_LIFE_H * Math.log2(doseMg / CAFFEINE_SAFE_THRESHOLD_MG);
+  return halfLifeH * Math.log2(doseMg / CAFFEINE_SAFE_THRESHOLD_MG);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -255,7 +294,7 @@ export function caffeineSafeHoursNeeded(doseMg: number): number {
 
 // ── 위상 지연 원인 분해: GROUND_TRUTH 각 항을 그대로 분리 (선형모형이라 합산=원값) ──
 export interface PhaseDelayBreakdownItem {
-  key: "bluelight" | "caffeine" | "sleepDebt" | "ledLoad" | "exercise";
+  key: "bluelight" | "caffeine" | "sleepDebt" | "ledLoad" | "exercise" | "personal";
   label: string;
   contributionMin: number;
   color: string;
@@ -265,7 +304,7 @@ export function phaseDelayBreakdown(
   inputs: ChronoTwinInputs,
   result: ChronoTwinResult
 ): PhaseDelayBreakdownItem[] {
-  return [
+  const items: PhaseDelayBreakdownItem[] = [
     {
       key: "bluelight",
       label: "스마트폰 빛",
@@ -297,6 +336,16 @@ export function phaseDelayBreakdown(
       color: "rgb(var(--sys-green))",
     },
   ];
+  const offset = inputs.personalOffsetMin ?? 0;
+  if (Math.abs(offset) >= 0.5) {
+    items.push({
+      key: "personal",
+      label: "내 몸 보정",
+      contributionMin: offset,
+      color: "rgb(var(--sys-red))",
+    });
+  }
+  return items;
 }
 
 // ── 유가빈 "잠의 의미": 위상 지연이 90분 수면 주기를 몇 개나 잘라내는지 ──
@@ -340,27 +389,16 @@ export interface WhatIfAction {
   savedMin: number;
 }
 
-/**
- * 같은 모형으로 "이 한 가지만 바꾸면 위상 지연이 몇 분 줄어드나"를 다시 계산한다.
- * 가장 효과가 큰 순서로 최대 4개 + 전부 실천했을 때의 예상 지연.
- */
-export function whatIfActions(
-  inputs: ChronoTwinInputs,
-  limit = 4
-): {
-  actions: WhatIfAction[];
-  allSavedMin: number;
-  afterMin: number;
-} {
-  const base = computeChronoTwin(inputs).phaseDelayMin;
+interface WhatIfCandidate {
+  key: WhatIfAction["key"];
+  label: string;
+  detail: string;
+  applicable: boolean;
+  apply: (i: ChronoTwinInputs) => ChronoTwinInputs;
+}
 
-  const candidates: {
-    key: WhatIfAction["key"];
-    label: string;
-    detail: string;
-    applicable: boolean;
-    apply: (i: ChronoTwinInputs) => ChronoTwinInputs;
-  }[] = [
+function whatIfCandidates(inputs: ChronoTwinInputs): WhatIfCandidate[] {
+  return [
     {
       key: "caffeine",
       label: "오후 6시 이후 카페인 끊기",
@@ -397,6 +435,35 @@ export function whatIfActions(
       apply: (i) => ({ ...i, ledColorTempK: 2700, ledLux: Math.min(i.ledLux, 100) }),
     },
   ];
+}
+
+/** "이렇게 바꾸면?" 한 가지를 입력값에 그대로 적용한 새 입력값을 돌려준다. */
+export function applyWhatIf(inputs: ChronoTwinInputs, key: WhatIfAction["key"]): ChronoTwinInputs {
+  const c = whatIfCandidates(inputs).find((x) => x.key === key);
+  return c ? c.apply(inputs) : inputs;
+}
+
+/** 모든 개선을 한꺼번에 적용한 입력값("개선한 습관"). */
+export function applyAllWhatIf(inputs: ChronoTwinInputs): ChronoTwinInputs {
+  return whatIfCandidates(inputs)
+    .filter((c) => c.applicable)
+    .reduce((acc, c) => c.apply(acc), inputs);
+}
+
+/**
+ * 같은 모형으로 "이 한 가지만 바꾸면 위상 지연이 몇 분 줄어드나"를 다시 계산한다.
+ * 가장 효과가 큰 순서로 최대 4개 + 전부 실천했을 때의 예상 지연.
+ */
+export function whatIfActions(
+  inputs: ChronoTwinInputs,
+  limit = 4
+): {
+  actions: WhatIfAction[];
+  allSavedMin: number;
+  afterMin: number;
+} {
+  const base = computeChronoTwin(inputs).phaseDelayMin;
+  const candidates = whatIfCandidates(inputs);
 
   const actions: WhatIfAction[] = candidates
     .filter((c) => c.applicable)
@@ -413,4 +480,18 @@ export function whatIfActions(
   const afterMin = computeChronoTwin(all).phaseDelayMin;
 
   return { actions: actions.slice(0, limit), allSavedMin: base - afterMin, afterMin };
+}
+
+/* ════════════════════════════════════════════════════════════════
+ * 신뢰도 — 예측은 점이 아니라 범위로 보여준다
+ * ════════════════════════════════════════════════════════════════ */
+
+/**
+ * 예측 오차(1σ, 분). pipeline 통합 모형(X₁+X₂+X₃, 더미 N=265)의 R²=0.517, 위상지연 σ≈19.3분에서
+ * σ·√(1−R²) ≈ 13분. 더미 데이터에서 나온 값이라 실제 사람에서는 더 클 수 있다.
+ */
+export const PREDICTION_SIGMA_MIN = 13;
+
+export function phaseDelayRange(phaseDelayMin: number): { lo: number; hi: number } {
+  return { lo: phaseDelayMin - PREDICTION_SIGMA_MIN, hi: phaseDelayMin + PREDICTION_SIGMA_MIN };
 }
