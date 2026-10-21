@@ -373,28 +373,8 @@ html.caffeine-jitter main > section { animation: jitter 0.14s linear infinite; }
 }
 .twin-pop { animation: twin-pop 0.35s ease-out both; }
 
-/* 6. 코나미 코드: 양이 울타리를 뛰어넘는다 */
-@keyframes sheep-run {
-  from { transform: translateX(-20vw); }
-  to   { transform: translateX(120vw); }
-}
-@keyframes sheep-hop {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50%      { transform: translateY(-110px) rotate(-14deg); }
-}
-.sheep-run { animation: sheep-run 2.4s linear infinite; }
-.sheep-hop { animation: sheep-hop 0.6s ease-in-out infinite; }
-.sheep-fence {
-  background:
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.55) 0 6px, transparent 6px 24px),
-    linear-gradient(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.45)) 0 40% / 100% 5px no-repeat;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html.caffeine-jitter main > section,
   .egg-jitter-text,
-  .twin-pop,
-  .sheep-run,
-  .sheep-hop { animation: none; }
-  .sheep-run { transform: translateX(45vw); }
+  .twin-pop { animation: none; }
 }

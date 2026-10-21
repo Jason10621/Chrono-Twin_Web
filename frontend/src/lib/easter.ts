@@ -9,7 +9,7 @@
  *  3. 0lux 손전등   — 방 조명을 0으로 내리면 화면이 어두워지고 마우스 주변만 보임
  *  4. 수면 양극단   — 평균 수면 0시간 / 최대치
  *  5. AI 코치       — "졸려" · "잘 자" · "치킨" 한마디 반응(서버 호출 없음)
- *  6. 코나미 코드   — ↑↑↓↓←→←→BA → 양 세기
+ *  6. 코나미 코드   — ↑↑↓↓←→←→BA → 양 울타리 점프 미니게임 (화살표 키로 점프, lib/sheepGame.ts)
  *  7. 새벽 접속     — 현지 시각 02~05시에 상단 배너 (?egg=dawn 으로 낮에도 확인 가능)
  *  8. 로고 5연타    — 졸린 쌍둥이
  */
@@ -120,8 +120,10 @@ export const KONAMI = [
   "b",
   "a",
 ];
-export const SHEEP_TOTAL = 4892;
-export const SHEEP_FINALE = "양 4,892마리째. 이제 안 졸림. 새벽 3시. 당신이 졌습니다";
+/** 게임 오버 문구 — 몇 마리를 넘었든 결론은 같다. */
+export function sheepFinale(count: number): string {
+  return `양 ${count.toLocaleString("ko-KR")}마리째. 이제 안 졸림. 새벽 3시. 당신이 졌습니다`;
+}
 
 /* ── 7. 새벽 접속 ─────────────────────────────────────────────── */
 export const DAWN_FROM_HOUR = 2; // 02:00 ~ 04:59
