@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Download, ImageIcon, Share2 } from "lucide-react";
 import { delaySentence } from "@/lib/chronoTwinModel";
 import { matchJetlagCity } from "@/lib/jetlagCities";
+import { jetlagEgg } from "@/lib/easter";
 
 const W = 1080;
 const H = 1350;
@@ -22,7 +23,18 @@ async function drawCard(phaseDelayMin: number, host: string): Promise<Blob> {
   }
 
   const { city, virtualHours } = matchJetlagCity(phaseDelayMin);
-  const isSeoul = city.city === "서울";
+  const egg = jetlagEgg(phaseDelayMin);
+  const isSeoul = city.city === "서울" && !egg;
+  // 지도(WorldJetlagMap)와 같은 말을 하도록 이스터에그도 그대로 따라간다.
+  const place = egg?.kind === "mars" ? "화성" : egg?.kind === "mariana" ? "마리아나 해구" : city.city;
+  const subLine =
+    egg?.kind === "mars"
+      ? "화성의 하루는 24시간 39분"
+      : egg?.kind === "mariana"
+        ? "수압 때문에 못 일어나요"
+        : egg?.kind === "mars-over"
+          ? `화성보다 ${egg.overMin}분 더 늦음`
+          : `서울보다 약 ${virtualHours.toFixed(1)}시간 느려요`;
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
@@ -62,7 +74,11 @@ async function drawCard(phaseDelayMin: number, host: string): Promise<Blob> {
     ctx.fillText("서울 그대로", 90, 540);
     ctx.fillText("예요", 90, 700);
   } else {
-    ctx.fillText(city.city, 90, 540);
+    // 긴 이름(마리아나 해구)은 카드 폭(900px)에 맞게 줄인다.
+    const w = ctx.measureText(place).width;
+    if (w > 900) ctx.font = `700 ${Math.floor((150 * 900) / w)}px ${FONT}`;
+    ctx.fillText(place, 90, 540);
+    ctx.font = `700 150px ${FONT}`;
     ctx.fillText("시간이에요", 90, 700);
   }
 
@@ -84,7 +100,7 @@ async function drawCard(phaseDelayMin: number, host: string): Promise<Blob> {
   if (!isSeoul) {
     ctx.fillStyle = "rgba(255,255,255,0.6)";
     ctx.font = `500 40px ${FONT}`;
-    ctx.fillText(`서울보다 약 ${virtualHours.toFixed(1)}시간 느려요`, 90, 1112);
+    ctx.fillText(subLine, 90, 1112);
   }
 
   ctx.fillStyle = "rgba(255,255,255,0.88)";

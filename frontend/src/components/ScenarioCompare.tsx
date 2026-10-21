@@ -8,6 +8,7 @@ import {
   delaySentence,
   type ChronoTwinInputs,
 } from "@/lib/chronoTwinModel";
+import { SLEEP_SLIDER_MAX, SLEEP_SLIDER_MIN } from "@/lib/easter";
 
 const signed = (m: number) => `${m >= 0 ? "+" : "−"}${Math.abs(Math.round(m))}`;
 const THUMB = 30; // globals.css 의 .ct-slider 썸 크기와 같다
@@ -215,8 +216,8 @@ export default function ScenarioCompare({ inputs }: { inputs: ChronoTwinInputs }
           unit="시간"
           a={inputs.avgRecentSleepHours}
           b={b.avgRecentSleepHours}
-          min={4}
-          max={9}
+          min={SLEEP_SLIDER_MIN}
+          max={SLEEP_SLIDER_MAX}
           step={0.25}
           color="purple"
           onB={(v) => set("avgRecentSleepHours", v)}

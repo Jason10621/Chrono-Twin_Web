@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Coffee, Lightbulb, MoonStar, Smartphone, type LucideIcon } from "lucide-react";
 import type { ChronoTwinInputs } from "@/lib/chronoTwinModel";
+import { CAFFEINE_SLIDER_MAX, SLEEP_SLIDER_MAX, SLEEP_SLIDER_MIN, inputEgg } from "@/lib/easter";
 
 interface Props {
   inputs: ChronoTwinInputs;
@@ -30,7 +31,7 @@ function Slider({
   step: number;
   onChange: (v: number) => void;
   color: string;
-  hint?: string;
+  hint?: ReactNode;
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
@@ -92,6 +93,7 @@ const LIGHT_PRESETS: { label: string; k: number }[] = [
 ];
 
 export default function InputPanel({ inputs, onChange }: Props) {
+  const egg = inputEgg(inputs); // 이스터에그: 카페인·수면 슬라이더 극단 (lib/easter.ts)
   const set = <K extends keyof ChronoTwinInputs>(k: K, v: ChronoTwinInputs[K]) => onChange({ ...inputs, [k]: v });
 
   return (
@@ -127,12 +129,18 @@ export default function InputPanel({ inputs, onChange }: Props) {
           label="오후 6시 이후 마신 양"
           unit="mg"
           min={0}
-          max={400}
+          max={CAFFEINE_SLIDER_MAX}
           step={10}
           value={inputs.caffeineMg}
           onChange={(v) => set("caffeineMg", v)}
           color="orange"
-          hint={`아메리카노 약 ${(inputs.caffeineMg / 150).toFixed(1)}잔`}
+          hint={
+            egg?.kind === "caffeine" ? (
+              <span className="egg-jitter-text font-semibold text-tx-red">{egg.hint}</span>
+            ) : (
+              `아메리카노 약 ${(inputs.caffeineMg / 150).toFixed(1)}잔`
+            )
+          }
         />
         <Slider
           label="마신 뒤 잠들기까지"
@@ -176,12 +184,15 @@ export default function InputPanel({ inputs, onChange }: Props) {
         <Slider
           label="최근 5일 평균 수면"
           unit="시간"
-          min={4}
-          max={9}
+          min={SLEEP_SLIDER_MIN}
+          max={SLEEP_SLIDER_MAX}
           step={0.25}
           value={inputs.avgRecentSleepHours}
           onChange={(v) => set("avgRecentSleepHours", v)}
           color="purple"
+          hint={
+            egg && egg.kind !== "caffeine" ? <span className="font-semibold text-tx-purple">{egg.hint}</span> : undefined
+          }
         />
         <div className="mt-5">
           <button

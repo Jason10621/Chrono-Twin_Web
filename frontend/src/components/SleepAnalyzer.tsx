@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import InputPanel from "./InputPanel";
 import ImpactSection from "./ImpactSection";
@@ -13,6 +13,7 @@ import TonightPlan from "./TonightPlan";
 import ScenarioCompare from "./ScenarioCompare";
 import MyTwin from "./MyTwin";
 import ShareCard from "./ShareCard";
+import LightsOut from "./LightsOut";
 import { Section, SectionHead } from "./Section";
 import {
   PHASE_DIAGNOSIS_LABEL,
@@ -26,6 +27,7 @@ import {
   type ChronoTwinInputs,
   type ChronoTwinResult,
 } from "@/lib/chronoTwinModel";
+import { LIGHTS_ON_REFERENCE_LUX, inputEgg, lightsOutHint } from "@/lib/easter";
 import {
   DEFAULT_PROFILE,
   HALF_LIFE_BY_SENSITIVITY,
@@ -68,7 +70,16 @@ const DEFAULT_INPUTS: ChronoTwinInputs = {
 
 const signed = (m: number) => `${m >= 0 ? "+" : "−"}${Math.abs(Math.round(m))}`;
 
-function ResultCard({ result, offsetMin }: { result: ChronoTwinResult; offsetMin: number }) {
+function ResultCard({
+  result,
+  offsetMin,
+  badge,
+}: {
+  result: ChronoTwinResult;
+  offsetMin: number;
+  /** 이스터에그: 슬라이더 극단에서 배지 문구를 바꾼다(숫자는 그대로). */
+  badge?: string;
+}) {
   const { level } = diagnosePhaseDelay(result.phaseDelayMin);
   const tone = PHASE_DIAGNOSIS_TONE[level];
   const range = phaseDelayRange(result.phaseDelayMin);
@@ -79,7 +90,7 @@ function ResultCard({ result, offsetMin }: { result: ChronoTwinResult; offsetMin
       <div className="px-6 pb-10 md:px-10">
         <span className="inline-flex items-center gap-2.5 rounded-full bg-fg/[0.07] px-4 py-1.5 text-[17px] font-semibold">
           <i className="h-2.5 w-2.5 rounded-full" style={{ background: tone }} />
-          {PHASE_DIAGNOSIS_LABEL[level]}
+          {badge ?? PHASE_DIAGNOSIS_LABEL[level]}
         </span>
         <p className="t-number mt-5" style={{ color: tone }}>
           {signed(result.phaseDelayMin)}
@@ -96,7 +107,7 @@ function ResultCard({ result, offsetMin }: { result: ChronoTwinResult; offsetMin
           {Math.abs(offsetMin) >= 0.5 && ` · 내 기록 보정 ${signed(offsetMin)}분 포함`}
         </p>
         {needsCare && (
-          <p className="mx-auto mt-5 max-w-md rounded-2xl bg-sys-orange/12 px-5 py-3.5 text-[15px] leading-snug text-fg">
+          <p className="mx-auto mt-5 max-w-md rounded-2xl bg-sys-orange/[0.12] px-5 py-3.5 text-[15px] leading-snug text-fg">
             이런 날이 며칠째 이어지고 낮에 많이 졸리다면, 보건선생님이나 병원에서 상담을 받아 보세요.
           </p>
         )}
@@ -106,7 +117,7 @@ function ResultCard({ result, offsetMin }: { result: ChronoTwinResult; offsetMin
 }
 
 /** 모바일에서 슬라이더를 만지는 동안 결과가 화면 밖으로 사라지지 않도록 하단에 작게 띄운다. */
-function LiveBar({ visible, result }: { visible: boolean; result: ChronoTwinResult }) {
+function LiveBar({ visible, result, badge }: { visible: boolean; result: ChronoTwinResult; badge?: string }) {
   const { level } = diagnosePhaseDelay(result.phaseDelayMin);
   const tone = PHASE_DIAGNOSIS_TONE[level];
   return (
@@ -120,7 +131,7 @@ function LiveBar({ visible, result }: { visible: boolean; result: ChronoTwinResu
     >
       <span className="inline-flex items-center gap-2.5 text-[17px] font-semibold">
         <i className="h-2.5 w-2.5 rounded-full" style={{ background: tone }} />
-        {PHASE_DIAGNOSIS_LABEL[level]}
+        {badge ?? PHASE_DIAGNOSIS_LABEL[level]}
       </span>
       <span className="text-[26px] font-semibold tabular-nums leading-none" style={{ color: tone }}>
         {signed(result.phaseDelayMin)}
@@ -142,7 +153,12 @@ export default function SleepAnalyzer() {
   // 서버 렌더링과 어긋나지 않게, 저장된 값은 마운트 뒤에 읽는다.
   useEffect(() => {
     const stored = loadInputs();
-    if (stored) setRaw(pickRaw(normalizeInputs({ ...DEFAULT_INPUTS, ...stored })));
+    // 0lux(손전등 이스터에그)로 끝낸 상태를 다시 열었을 때 화면이 어두운 채로 시작하지 않게, 0이면 복원하지 않는다.
+    if (stored) {
+      const merged = { ...DEFAULT_INPUTS, ...stored };
+      if (merged.ledLux === 0) merged.ledLux = DEFAULT_INPUTS.ledLux;
+      setRaw(pickRaw(normalizeInputs(merged)));
+    }
     const p = loadProfile();
     if (p) {
       setProfile(p);
@@ -182,6 +198,16 @@ export default function SleepAnalyzer() {
     [inputs]
   );
   const pending = hydrated ? pendingEntry(log) : null;
+
+  // 이스터에그(lib/easter.ts): 카페인·수면 슬라이더 극단의 배지 문구, 카페인 폭주 떨림, 0lux 손전등
+  const egg = inputEgg(inputs);
+  const jitter = egg?.kind === "caffeine";
+  useEffect(() => {
+    document.documentElement.classList.toggle("caffeine-jitter", jitter);
+    return () => document.documentElement.classList.remove("caffeine-jitter");
+  }, [jitter]);
+  const lightsOut = raw.ledLux === 0;
+  const lightsOn = useCallback(() => setRaw((r) => ({ ...r, ledLux: LIGHTS_ON_REFERENCE_LUX })), []);
 
   const inputsRef = useRef<HTMLDivElement>(null);
   const [inputsInView, setInputsInView] = useState(false);
@@ -253,7 +279,7 @@ export default function SleepAnalyzer() {
             <InputPanel inputs={raw} onChange={setRaw} />
           </div>
           <div className="order-1 lg:sticky lg:top-20 lg:order-2">
-            <ResultCard result={result} offsetMin={offsetMin} />
+            <ResultCard result={result} offsetMin={offsetMin} badge={egg?.badge} />
           </div>
         </div>
       </Section>
@@ -335,7 +361,8 @@ export default function SleepAnalyzer() {
         </div>
       </Section>
 
-      <LiveBar visible={inputsInView} result={result} />
+      <LiveBar visible={inputsInView} result={result} badge={egg?.badge} />
+      <LightsOut active={lightsOut} hint={lightsOutHint(raw.ledColorTempK)} onLightsOn={lightsOn} />
     </>
   );
 }

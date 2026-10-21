@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
+import Wordmark from "@/components/Wordmark";
+import EasterEggs from "@/components/EasterEggs";
 
 export const metadata: Metadata = {
   title: "Chrono-Twin — 오늘 밤의 습관이 내일을 바꿉니다",
@@ -37,9 +39,7 @@ export default function RootLayout({
       <body className="min-h-screen">
         <header className="nav-blur fixed inset-x-0 top-0 z-50">
           <div className="mx-auto flex h-[52px] max-w-6xl items-center justify-between px-5 md:px-8">
-            <a href="/" className="text-[19px] font-semibold tracking-tight">
-              Chrono-Twin
-            </a>
+            <Wordmark />
             <nav className="flex items-center gap-2 sm:gap-6">
               <a href="/#analyze" className="nav-link hidden sm:inline">
                 분석
@@ -57,6 +57,8 @@ export default function RootLayout({
             </nav>
           </div>
         </header>
+
+        <EasterEggs />
 
         <main id="top">{children}</main>
 

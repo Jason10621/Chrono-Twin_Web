@@ -8,6 +8,7 @@ import {
   type ChronoTwinInputs,
   type WhatIfAction,
 } from "@/lib/chronoTwinModel";
+import { chatEgg } from "@/lib/easter";
 
 // 서버가 모델별로 자체 타임아웃(1차 10초 + 2차 20초)을 두므로 넉넉히 35초로 설정.
 const REQUEST_TIMEOUT_MS = 35_000;
@@ -16,6 +17,8 @@ const LONG_WAIT_MS = 7_000;
 interface ChatMsg {
   role: "user" | "assistant";
   content: string;
+  /** 이스터에그 대화 — 서버(AI)로는 보내지 않는다. */
+  local?: boolean;
 }
 
 /** 슬라이더가 바뀐 것을 알려주는 카드. AI 서버로는 보내지 않는다(서버가 이전 입력값으로 직접 비교한다). */
@@ -91,15 +94,38 @@ export default function ChronoAI({
   const [longWait, setLongWait] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const longWaitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eggTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [items, loading]);
 
+  useEffect(
+    () => () => {
+      if (eggTimer.current) clearTimeout(eggTimer.current);
+    },
+    []
+  );
+
   async function send(text: string, opts?: { inputs?: ChronoTwinInputs; previous?: ChronoTwinInputs; prefix?: Item[] }) {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
+
+    // 이스터에그: "졸려" · "잘 자" · "치킨" 같은 한마디에는 AI 를 부르지 않고 바로(혹은 일부러 늦게) 답한다.
+    const egg = chatEgg(trimmed);
+    if (egg) {
+      setItems([...items, ...(opts?.prefix ?? []), { role: "user", content: trimmed, local: true }]);
+      setInput("");
+      setNotice(null);
+      setLoading(true);
+      eggTimer.current = setTimeout(() => {
+        setItems((m) => [...m, { role: "assistant", content: egg.reply, local: true }]);
+        setLoading(false);
+      }, egg.delayMs);
+      return;
+    }
+
     const next: Item[] = [...items, ...(opts?.prefix ?? []), { role: "user", content: trimmed }];
     setItems(next);
     setInput("");
@@ -118,7 +144,7 @@ export default function ChronoAI({
         body: JSON.stringify({
           inputs: opts?.inputs ?? inputs,
           previousInputs: opts?.previous,
-          messages: next.filter((m): m is ChatMsg & { kind?: undefined } => m.kind !== "change"),
+          messages: next.filter((m): m is ChatMsg & { kind?: undefined } => m.kind !== "change" && !m.local),
         }),
         signal: controller.signal,
       });
