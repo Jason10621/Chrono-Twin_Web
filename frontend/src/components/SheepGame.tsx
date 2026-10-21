@@ -3,7 +3,24 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { sheepFinale } from "@/lib/easter";
-import { GROUND, H, SHEEP_X, W, createGame, jump, step, type Fence, type Game, type Phase } from "@/lib/sheepGame";
+import {
+  GROUND,
+  H,
+  MAX_LEVEL,
+  SHEEP_X,
+  W,
+  createGame,
+  difficulty,
+  jump,
+  setDuck,
+  starHeight,
+  step,
+  type Cause,
+  type Fence,
+  type Game,
+  type Phase,
+  type Star,
+} from "@/lib/sheepGame";
 
 const BEST_KEY = "ct-sheep-best";
 const FONT = '"Pretendard Variable","SF Pro Display",-apple-system,"Malgun Gothic",sans-serif';
@@ -14,6 +31,7 @@ const QUIPS: [number, string][] = [
   [5, "좋아요, 양이 한 마리, 두 마리…"],
   [15, "슬슬 졸리지 않나요?"],
   [30, "눈이 감기기 시작해요…"],
+  [45, "별이 날아오면 ↓ 로 숙이세요"],
   [60, "아직도 안 졸려요?"],
   [100, "당신, 혹시 잠이 없나요?"],
 ];
@@ -70,6 +88,7 @@ function drawSheep(ctx: CanvasRenderingContext2D, g: Game) {
 
   ctx.save();
   ctx.translate(SHEEP_X, feetY - bob);
+  if (g.ducking && !dead) ctx.scale(1.1, 0.62); // ↓ 를 누르는 동안 납작하게 숙인다
   if (dead) {
     // 울타리에 걸려 앞으로 넘어진다
     ctx.rotate(Math.min(1.45, (g.time - g.overAt) * 7));
@@ -154,6 +173,80 @@ function drawSheep(ctx: CanvasRenderingContext2D, g: Game) {
   ctx.restore();
 }
 
+function drawStar(ctx: CanvasRenderingContext2D, s: Star, spin: number) {
+  const cy = GROUND - starHeight(s.x);
+  // 꼬리: 지나온 길(오른쪽·위쪽)을 따라 점점 옅어진다
+  for (let k = 1; k <= 8; k++) {
+    const tx = s.x + k * 14;
+    const ty = GROUND - starHeight(tx);
+    ctx.fillStyle = `rgba(255,224,130,${0.5 * (1 - k / 9)})`;
+    ctx.beginPath();
+    ctx.arc(tx, ty, Math.max(1.5, 8 * (1 - k / 10)), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const glow = ctx.createRadialGradient(s.x, cy, 2, s.x, cy, 32);
+  glow.addColorStop(0, "rgba(255,214,102,0.6)");
+  glow.addColorStop(1, "rgba(255,214,102,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(s.x - 34, cy - 34, 68, 68);
+
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = spin + (i * Math.PI) / 5 - Math.PI / 2;
+    const r = i % 2 === 0 ? 13 : 5.6;
+    const px = s.x + Math.cos(a) * r;
+    const py = cy + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = "#ffd84d";
+  ctx.strokeStyle = "#fff3b0";
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = "round";
+  ctx.fill();
+  ctx.stroke();
+}
+
+function pill(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  const r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2);
+  ctx.arc(x + r, y + r, r, Math.PI / 2, (Math.PI * 3) / 2);
+  ctx.closePath();
+}
+
+/** 왼쪽 위: 지금 난이도(레벨 + 막대). 레벨이 오르면 가운데에 잠깐 알려준다. */
+function drawHud(ctx: CanvasRenderingContext2D, g: Game) {
+  if (g.phase === "ready") return;
+  const d = difficulty(g.playTime);
+  const label = g.level >= MAX_LEVEL ? "Lv.MAX" : `Lv.${g.level}`;
+  ctx.textAlign = "left";
+  ctx.font = `700 14px ${FONT}`;
+  const w = ctx.measureText(label).width + 22;
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  pill(ctx, 14, 14, w, 24);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.fillText(label, 25, 31);
+  // 난이도 막대: 초록 → 주황 → 빨강
+  ctx.fillStyle = "rgba(255,255,255,0.14)";
+  pill(ctx, 14, 46, 88, 5);
+  ctx.fill();
+  ctx.fillStyle = `hsl(${Math.round(150 - 150 * d)}, 85%, 60%)`;
+  pill(ctx, 14, 46, Math.max(5, 88 * d), 5);
+  ctx.fill();
+
+  const age = g.time - g.levelUpAt;
+  if (g.level > 1 && age < 1.4) {
+    ctx.textAlign = "center";
+    ctx.font = `700 26px ${FONT}`;
+    ctx.fillStyle = `rgba(255,214,107,${1 - age / 1.4})`;
+    ctx.fillText(g.level >= MAX_LEVEL ? "난이도 MAX!" : "난이도 UP!", W / 2, 50 - age * 8);
+  }
+}
+
 function draw(ctx: CanvasRenderingContext2D, g: Game, stars: ReturnType<typeof makeStars>) {
   ctx.clearRect(0, 0, W, H);
 
@@ -197,7 +290,17 @@ function draw(ctx: CanvasRenderingContext2D, g: Game, stars: ReturnType<typeof m
   }
 
   for (const f of g.fences) drawFence(ctx, f);
+  g.stars.forEach((s) => drawStar(ctx, s, g.time * 3 + s.x * 0.01));
   drawSheep(ctx, g);
+  drawHud(ctx, g);
+
+  // 처음 몇 번의 별에는 "숙여요!" 안내를 띄운다
+  if (g.phase === "playing" && g.starGroups <= 3 && g.stars.some((s) => !s.counted && s.x > SHEEP_X + 40 && s.x < SHEEP_X + 380)) {
+    ctx.textAlign = "center";
+    ctx.font = `700 19px ${FONT}`;
+    ctx.fillStyle = `rgba(255,227,138,${0.65 + 0.35 * Math.sin(g.time * 12)})`;
+    ctx.fillText("↓ 숙여요!", SHEEP_X + 18, GROUND - 128);
+  }
 
   // 한 마리 셀 때마다 "+1"
   ctx.textAlign = "center";
@@ -209,9 +312,15 @@ function draw(ctx: CanvasRenderingContext2D, g: Game, stars: ReturnType<typeof m
 }
 
 /* ── 컴포넌트 ────────────────────────────────────────────── */
+const Key = ({ children }: { children: string }) => (
+  <kbd className="mx-0.5 inline-flex h-7 min-w-7 items-center justify-center rounded-md bg-white/15 px-1.5 text-[14px] font-semibold text-white">
+    {children}
+  </kbd>
+);
+
 /**
  * 코나미 코드 이스터에그 — 양 울타리 점프 미니게임.
- * 조작은 화살표 키(↑ ↓ ← → 아무거나)로 점프 하나뿐. Esc 로 닫는다. 규칙은 lib/sheepGame.ts.
+ * 조작: ↑ ← → 점프, ↓ 를 누르는 동안 숙이기(위에서 날아오는 별 피하기). Esc 로 닫는다. 규칙은 lib/sheepGame.ts.
  */
 export default function SheepGame({ onClose }: { onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -220,6 +329,7 @@ export default function SheepGame({ onClose }: { onClose: () => void }) {
   const [phase, setPhase] = useState<Phase>("ready");
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
+  const [cause, setCause] = useState<Cause | null>(null);
   const bestRef = useRef(0);
 
   useEffect(() => {
@@ -260,6 +370,7 @@ export default function SheepGame({ onClose }: { onClose: () => void }) {
       if (g.phase !== shownPhase) {
         shownPhase = g.phase;
         setPhase(g.phase);
+        setCause(g.cause);
         if (g.phase === "over" && g.score > bestRef.current) {
           bestRef.current = g.score;
           setBest(g.score);
@@ -278,29 +389,52 @@ export default function SheepGame({ onClose }: { onClose: () => void }) {
     };
     raf = requestAnimationFrame(frame);
 
+    // 새 게임이 시작(재시작)됐다면 화면 상태도 바로 맞춘다
+    const syncAfterInput = () => {
+      const g = gameRef.current;
+      if (g.phase !== shownPhase) {
+        shownPhase = g.phase;
+        setPhase(shownPhase);
+        setCause(g.cause);
+        shownScore = g.score;
+        setScore(shownScore);
+      }
+    };
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
-      } else if (e.key.startsWith("Arrow")) {
+      } else if (e.key === "ArrowDown") {
         e.preventDefault(); // 뒤쪽 페이지가 스크롤되지 않게
         if (!e.repeat) {
+          gameRef.current = setDuck(gameRef.current, true);
+          syncAfterInput();
+        }
+      } else if (e.key.startsWith("Arrow")) {
+        e.preventDefault();
+        if (!e.repeat) {
           gameRef.current = jump(gameRef.current);
-          // 다시 시작했다면 화면 상태도 바로 맞춘다
-          if (gameRef.current.phase !== shownPhase) {
-            shownPhase = gameRef.current.phase;
-            setPhase(shownPhase);
-            shownScore = gameRef.current.score;
-            setScore(shownScore);
-          }
+          syncAfterInput();
         }
       } else if (e.key === " ") {
         e.preventDefault();
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") gameRef.current = setDuck(gameRef.current, false);
+    };
+    // 창을 벗어나면 키를 뗀 것으로 본다(숙인 채로 굳지 않게)
+    const onBlur = () => {
+      gameRef.current = setDuck(gameRef.current, false);
+    };
     window.addEventListener("keydown", onKey, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    window.addEventListener("blur", onBlur);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+      window.removeEventListener("blur", onBlur);
     };
   }, [onClose]);
 
@@ -314,13 +448,14 @@ export default function SheepGame({ onClose }: { onClose: () => void }) {
       data-egg="sheep"
       data-phase={phase}
       data-score={score}
+      data-cause={cause ?? ""}
       className="fixed inset-0 z-[90] flex flex-col items-center justify-center overflow-y-auto bg-[#0a0f24]/[0.97] px-4 py-6 text-center text-white outline-none backdrop-blur-sm"
     >
       <p className="text-[clamp(52px,11vw,104px)] font-semibold leading-none tracking-[-0.04em] tabular-nums">
         {score.toLocaleString("ko-KR")}
         <span className="ml-2 text-[0.28em] font-medium tracking-normal text-white/70">마리</span>
       </p>
-      <p className="mt-2 text-[15px] text-white/60">최고 {best.toLocaleString("ko-KR")}마리</p>
+      <p className="mt-2 text-[15px] text-white/60">최고 {Math.max(best, score).toLocaleString("ko-KR")}마리</p>
 
       <div className="relative mt-5 w-full max-w-[860px] overflow-hidden rounded-[28px] bg-[#0b1226]/90 ring-1 ring-white/10">
         <canvas ref={canvasRef} className="block h-auto w-full" aria-hidden />
@@ -328,18 +463,35 @@ export default function SheepGame({ onClose }: { onClose: () => void }) {
         {phase === "ready" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/25">
             <p className="text-[clamp(20px,3.2vw,30px)] font-semibold">화살표 키를 눌러 시작해요</p>
-            <p className="text-[clamp(14px,2vw,17px)] text-white/75">↑ ↓ ← → 어떤 화살표든 점프예요</p>
+            <p className="text-[clamp(14px,2vw,17px)] text-white/75">
+              <Key>↑</Key>
+              <Key>←</Key>
+              <Key>→</Key> 점프 · <Key>↓</Key> 숙이기 (별 피하기)
+            </p>
           </div>
         )}
         {phase === "over" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 px-6" aria-live="polite">
             <p className="max-w-lg text-[clamp(19px,3.2vw,30px)] font-semibold leading-snug">{sheepFinale(score)}</p>
+            <p className="text-[clamp(14px,2vw,17px)] font-medium text-[#ffd66b]">
+              {cause === "star" ? "별에 맞았어요 — ↓ 로 숙이면 피할 수 있어요" : "울타리에 걸렸어요"}
+            </p>
             <p className="text-[clamp(14px,2vw,17px)] text-white/75">아무 화살표 키를 누르면 다시 시작해요</p>
           </div>
         )}
       </div>
 
       <p className="mt-5 min-h-[1.6em] text-[17px] text-white/80">{phase === "playing" ? quipFor(score) : ""}</p>
+      <p className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[15px] text-white/65">
+        <span>
+          <Key>↑</Key>
+          <Key>←</Key>
+          <Key>→</Key> 점프
+        </span>
+        <span>
+          <Key>↓</Key> 누르는 동안 숙이기
+        </span>
+      </p>
       <button type="button" onClick={onClose} className="btn mt-4 bg-white/15 text-white hover:bg-white/25">
         <X className="mr-1.5 h-5 w-5" strokeWidth={2.2} />
         그만할래요 (Esc)
