@@ -1,8 +1,10 @@
 import SleepAnalyzer from "@/components/SleepAnalyzer";
+import SideNav from "@/components/SideNav";
 
 export default function Home() {
   return (
     <>
+      <SideNav />
       <section className="px-5 pb-16 pt-32 text-center md:pb-24 md:pt-44">
         <p className="t-eyebrow mb-5 animate-fade-up">Chrono-Twin</p>
         <h1 className="t-hero mx-auto max-w-4xl animate-fade-up [animation-delay:80ms]">
